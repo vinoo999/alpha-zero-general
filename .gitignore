@@ -4,3 +4,5 @@
 /temp/
 /.project
 /.pydevproject
+/chess/.idea
+/chess/node_modules
