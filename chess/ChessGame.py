@@ -2,13 +2,13 @@ from __future__ import print_function
 import sys
 sys.path.append('..')
 from Game import Game
-from .OthelloLogic import Board
+from .ChessLogic import Board
 import numpy as np
 
 
-class OthelloGame(Game):
-    def __init__(self, n):
-        self.n = n
+class ChessGame(Game):
+    def __init__(self):
+        self.n = 8
 
     def getInitBoard(self):
         # return initial board (numpy board)
