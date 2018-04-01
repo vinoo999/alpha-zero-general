@@ -15,21 +15,28 @@ from ChessConstants import *
 from ChessUtil import *
 
 class Board():
-    
-    def __init__(self):
+
+    #############################################################
+    ############################ SET UP METHODS #################
+    #############################################################
+
+    def __init__(self, fen=None):
         "Set up initial board configuration."
 
-        board = np.zeros(128)
-        kings = {w: EMPTY, b: EMPTY}
-        turn = WHITE
-        castling = {w: 0, b: 0}
-        ep_square = EMPTY
-        half_moves = 0
-        move_number = 1
-        history = []
-        header = {}
+        self.board = np.empty((128,))
+        self.kings = {w: EMPTY, b: EMPTY}
+        self.turn = WHITE
+        self.castling = {w: 0, b: 0}
+        self.ep_square = EMPTY
+        self.half_moves = 0
+        self.move_number = 1
+        self.history = []
+        self.header = {}
 
-        load(DEFAULT_POSITION)
+        if fen is None:
+            self.load(DEFAULT_POSITION)
+        else:
+            self.load(fen)
 
         self.n = n
         # Create the empty board array.
@@ -43,140 +50,625 @@ class Board():
         self.pieces[int(self.n/2)-1][int(self.n/2)-1] = -1
         self.pieces[int(self.n/2)][int(self.n/2)] = -1
 
-    def load(fen):
-        tokens = re.split(('\s+',fen)
+    def clear(self):
+        self.board = np.empty((128,))
+        self.kings = {'w': EMPTY, 'b': EMPTY}
+        self.turn = WHITE
+        self.castling = {'w': 0, 'b': 0}
+        self.ep_square = EMPTY
+        self.half_moves = 0
+        self.move_number = 1
+        self.history = []
+        self.header = {}
+        self.update_setup(generate_fen(self))
+
+    def reset(self):
+        self.load(DEFAULT_POSITION)
+        return
+
+    def update_setup(self, fen):
+        '''/* called when the initial board setup is changed with put() or remove().
+         * modifies the SetUp and FEN properties of the header object.  if the FEN is
+         * equal to the default position, the SetUp and FEN are deleted
+         * the setup is only updated if history.length is zero, ie moves haven't been
+         * made.
+         */'''
+        if (len(self.history) > 0):
+            return
+
+        if (fen != DEFAULT_POSITION):
+            self.header['SetUp'] = '1'
+            self.header['FEN'] = fen
+        else:
+            self.header['SetUp'] = None
+            self.header['FEN'] = None
+        }
+
+    def load(self, fen):
+        tokens = re.split(('\s+',fen))
         position = tokens[0]
         square = 0
 
-        if (!validate_fen(fen)['valid']):
+        if (not validate_fen(fen)['valid']):
             return False
 
-        clear()
+        self.clear()
 
         for i in range(len(position)):
-            piece = position.charAt(i)
+            piece = position[i]
 
-            if (piece === '/'):
+            if (piece == '/'):
                 square += 8
             elif (is_digit(piece)):
                 square += parseInt(piece, 10)
             else:
                 color = WHITE if piece < 'a' else BLACK
-                put({type: piece.toLowerCase(), color: color}, algebraic(square))
-                square++
+                put({'type': piece.lower(), 'color': color}, algebraic(square))
+                square+=1
             
         
 
-        turn = tokens[1]
+        self.turn = tokens[1]
 
         if (tokens[2].indexOf('K') > -1) {
-            castling.w |= BITS.KSIDE_CASTLE
+            self.castling['w'] |= BITS['KSIDE_CASTLE']
         }
         if (tokens[2].indexOf('Q') > -1) {
-            castling.w |= BITS.QSIDE_CASTLE
+            self.castling['w'] |= BITS['QSIDE_CASTLE']
         }
         if (tokens[2].indexOf('k') > -1) {
-            castling.b |= BITS.KSIDE_CASTLE
+            self.castling['b'] |= BITS['KSIDE_CASTLE']
         }
         if (tokens[2].indexOf('q') > -1) {
-            castling.b |= BITS.QSIDE_CASTLE
+            self.castling['b'] |= BITS['QSIDE_CASTLE']
         }
 
-        ep_square = (tokens[3] === '-') ? EMPTY : SQUARES[tokens[3]]
-        half_moves = parseInt(tokens[4], 10)
-        move_number = parseInt(tokens[5], 10)
+        self.ep_square = EMPTY if (tokens[3] == '-') ? else SQUARES[tokens[3]]
+        self.half_moves = int(tokens[4])
+        self.move_number = int(tokens[5])
 
-        update_setup(generate_fen())
+        self.update_setup(generate_fen())
 
         return True
 
+    def set_header(self, args):
+        for i in range(0, len(args), 2):
+            if (type(args[i]) == str and \
+                type(args[i + 1]) == str):
+                self.header[args[i]] = args[i + 1]
+        return self.header
 
-    # TODO: this function is pretty much crap - it validates structure but
-    # completely ignores content (e.g. doesn't verify that each side has a king)
-    # ... we should rewrite this, and ditch the silly error_number field while
-    # we're at it
-    #
-    
-    def validate_fen(fen):
-        errors = {
-            0: 'No errors.',
-            1: 'FEN string must contain six space-delimited fields.',
-            2: '6th field (move number) must be a positive integer.',
-            3: '5th field (half move counter) must be a non-negative integer.',
-            4: '4th field (en-passant square) is invalid.',
-            5: '3rd field (castling availability) is invalid.',
-            6: '2nd field (side to move) is invalid.',
-            7: '1st field (piece positions) does not contain 8 \'/\'-delimited rows.',
-            8: '1st field (piece positions) is invalid [consecutive numbers].',
-            9: '1st field (piece positions) is invalid [invalid piece].',
-            10: '1st field (piece positions) is invalid [row too large].',
-            11: 'Illegal en-passant square',
+
+    ##############################################################
+    ################ MOVES #######################################
+    ###############################################################
+    def get(self, square):
+        piece = self.board[SQUARES[square]]
+        return {'type': piece['type'], 'color': piece['color']} if piece else None
+
+    def put(self, piece, square):
+        # /* check for valid piece object */
+        if piece is dict:
+            if (!('type' in piece.keys() and 'color' in piece.keys())):
+                return False
+
+        # /* check for piece */
+        if piece[type].lower() in SYMBOLS:
+            return False
+
+        # /* check for valid square */
+        if square not in SQUARES.keys():
+            return False
+
+        sq = SQUARES[square]
+
+        # /* don't let the user place more than one king */
+        if (piece['type'] == KING and \
+            !(kings[piece['color']] == EMPTY or kings[piece['color']] == sq)):
+            return False
         }
 
-        # 1st criterion: 6 space-seperated fields? */
-        tokens = re.split('\s+', fen)
-        if (tokens.length != 6):
-            return {'valid': False, 'error_number': 1, 'error': errors[1]}
+        self.board[sq] = {'type': piece['type'], 'color': piece['color']}
+        if (piece['type'] == KING):
+            kings[piece['color']] = sq
+
+        self.update_setup(generate_fen(self))
+
+        return True
+
+    def remove(self, square):
+        piece = self.get(square)
+        self.board[SQUARES[square]] = None
+        if (piece and piece['type'] == KING):
+            kings[piece['color']] = EMPTY
+
+        self.update_setup(generate_fen(self))
+
+        return piece
+
+    def build_move(self, from_sq, to_sq, flags, promotion=None):
+
+        move = {
+            'color': turn,
+            'from': from_sq,
+            'to': to,
+            'flags': flags,
+            'piece': self.board[from_sq]['type']
+        }
+
+        if (promotion):
+            move['flags'] |= BITS['PROMOTION']
+            move['promotion'] = promotion
+
+        if (self.board[to_sq]):
+            move['captured'] = board[to_sq]['type']
+        elif (flags & BITS['EP_CAPTURE']):
+            move['captured'] = PAWN
+        return move
+
+    def add_move(self, moves, from_sq, to_sq, flags):
+        # /* if pawn promotion */
+        if (self.board[from_sq]['type'] == PAWN and \
+            (rank(to_sq) == RANK_8 or rank(to_sq) == RANK_1)):
+            pieces = [QUEEN, ROOK, BISHOP, KNIGHT]
+            i = 0
+            while i < len(pieces):
+                moves.append(self.build_move(from_sq, to_sq, flags, pieces[i]))
+                i+=1
+        else:
+            moves.append(self.build_move(from_sq, to_sq, flags))
         
+        return
 
-        # 2nd criterion: move number field is a integer value > 0? */
-        if (tokens[5] is None or int(tokens[5] <= 0)):
-            return {'valid': False, 'error_number': 2, 'error:' errors[2]}
+    def generate_moves(self, options=None):
+        moves = []
+        us = self.turn
+        them = swap_color(us)
+        second_rank = {BLACK: RANK_7, WHITE: RANK_2}
+
+        first_sq = SQUARES['a8']
+        last_sq = SQUARES['h1']
+        single_square = False
+
+        # /* do we want legal moves? */
+        legal = options['legal'] if (options is dict and 'legal' in options.keys()) else True
+
+        # /* are we generating moves for a single square? */
+        if (options is dict and 'square' in options.keys()):
+            if (options['square'] in SQUARES.keys()):
+                first_sq = SQUARES[options['square']]
+                last_sq = SQUARES[options['square']]
+                single_square = True
+            else:
+                # /* invalid square */
+                return []
+
+        for i in range(first_sq, last_sq+1):
+            # /* did we run off the end of the board */
+            if (i & 0x88):
+                i += 7
+                continue
+            piece = self.board[i]
+
+            # Check if piece/square is one of the current turns pieces
+            if (piece is None or piece['color'] != us):
+                continue
+
+            ########################################
+            ########### PAWN MOVES #################
+            ########################################
+            if (piece['type'] == PAWN):
+                # /* single square, non-capturing */
+                square = i + PAWN_OFFSETS[us][0]
+                if (self.board[square] == None):
+                    self.add_move(moves, i, square, BITS['NORMAL'])
+
+                    # /* double square */
+                    square = i + PAWN_OFFSETS[us][1]
+                    if (second_rank[us]== rank(i) and self.board[square] is None):
+                        self.add_move(moves, i, square, BITS['BIG_PAWN'])
+
+                # /* pawn captures */
+                for j in range(2,4):
+                    square = i + PAWN_OFFSETS[us][j]
+                    if (square & 0x88): 
+                        continue
+
+                    if (board[square] is not None and \
+                        board[square]['color'] == them):
+                        self.add_move(moves, i, square, BITS['CAPTURE'])
+                    elif (square == ep_square):
+                        self.add_move(moves, i, ep_square, BITS['EP_CAPTURE'])
+
+            #######################################
+            ####### ALL OTHER PIECES ##############
+            #######################################
+            else:
+                j = 0
+                while j < len(PIECE_OFFSETS[piece['type']]):
+                    offset = PIECE_OFFSETS[piece['type']][j]
+                    square = i
+
+                    while (True):
+                        square += offset
+                        if (square & 0x88):
+                            break
+
+                        if (self.board[square] is None):
+                            add_move(board, moves, i, square, BITS['NORMAL'])
+                        else:
+                            if (self.board[square]['color'] == us):
+                                break
+                            self.add_move(moves, i, square, BITS['CAPTURE'])
+                            break
+
+                        # /* break, if knight or king */
+                        if (piece['type'] == 'n' or piece['type'] == 'k'):
+                            break
+                    j+=1
         
+        #############################################
+        ########### CASTLING ########################
+        #############################################
+        if ((not single_square) or last_sq == kings[us]):
+            # /* king-side castling */
+            if (castling[us] & BITS['KSIDE_CASTLE']):
+                castling_from = kings[us]
+                castling_to = castling_from + 2
 
-        # 3rd criterion: half move counter is an integer >= 0? */
-        if (tokens[4] is None or int(tokens[4]) < 0)):
-            return {'valid': False, 'error_number': 3, 'error:' errors[3]}
+                if (self.board[castling_from + 1] == None and \
+                    self.board[castling_to]       == None and \
+                    !attacked(them, kings[us]) and \
+                    !attacked(them, castling_from + 1) and \
+                    !attacked(them, castling_to)):
+                    self.add_move(moves, kings[us] , castling_to,
+                        BITS['KSIDE_CASTLE'])
+
+            # /* queen-side castling */
+            if (castling[us] & BITS['QSIDE_CASTLE']) {
+                castling_from = kings[us]
+                castling_to = castling_from - 2
+
+                if (board[castling_from - 1] == None and \
+                    board[castling_from - 2] == None and \
+                    board[castling_from - 3] == None and \
+                    !attacked(them, kings[us]) and \
+                    !attacked(them, castling_from - 1) and \
+                    !attacked(them, castling_to)):
+                    self.add_move(moves, kings[us], castling_to,\
+                        BITS['QSIDE_CASTLE'])
+
+        # /* return all pseudo-legal moves (this includes moves that allow the king
+        #  * to be captured)
+        #  */
+        if (not legal):
+            return moves
+
+        # /* filter out illegal moves */
+        legal_moves = []
+        i = 0
+        while (i< len(moves)):
+            self.make_move(moves[i])
+            if (!king_attacked(us)):
+                legal_moves.append(moves[i])
+            self.undo_move()
+            i+= 1
+
+        return legal_moves
+
+    def attacked(self, color, square):
+        for i in range(SQUARES['a8'], SQUARES['h1']):
+            # /* did we run off the end of the board */
+            if (i & 0x88):
+                i += 7
+                continue
+
+            # /* if empty square or wrong color */
+            if (self.board[i] is None or self.board[i]['color'] != color):
+                continue
+
+            piece = self.board[i]
+            difference = i - square
+            index = difference + 119
+
+            if (ATTACKS[index] & (1 << SHIFTS[piece['type']])):
+                if (piece['type'] == PAWN):
+                    if (difference > 0):
+                        if (piece['color'] == WHITE):
+                            return True
+                    else:
+                        if (piece['color'] == BLACK):
+                            return True
+                    continue
+
+                # /* if the piece is a knight or a king */
+                if (piece['type'] == 'n' or piece['type'] == 'k'):
+                    return True
+
+                offset = RAYS[index]
+                j = i + offset
+
+                blocked = False
+                while (j != square) {
+                    if (self.board[j] is not None):
+                        blocked = True
+                        break
+                    j += offset
+
+                if (not blocked):
+                    return True
+
+        return False
+
+    def king_attacked(self, color):
+        return self.attacked(swap_color(color), kings[color])
+
+    def in_check(self):
+        return self.king_attacked(self.turn)
+
+    def in_checkmate(self):
+        return self.in_check() and len(self.generate_moves()) == 0
+
+    def in_stalemate(self):
+        return not self.in_check() and len(self.generate_moves()) == 0
+
+    def insufficient_material(self):
+        pieces = {}
+        bishops = []
+        num_pieces = 0
+        sq_color = 0
+
+        for i in range(SQUARES['a8'], SQUARES['h1']+1):
+            sq_color = (sq_color + 1) % 2
+            if (i & 0x88):
+                i += 7
+                continue
+
+            piece = self.board[i]
+            if (piece) {
+                pieces[piece['type']] = pieces[piece['type']] + 1 if (piece['type'] in pieces.keys()) else 1
+                if (piece['type'] == BISHOP):
+                    bishops.append(sq_color)
+                num_pieces+=1
+            }
+        }
+
+        #/* k vs. k */
+        if (num_pieces == 2):
+            return True
+
+        #/* k vs. kn .... or .... k vs. kb */
+        elif (num_pieces == 3 and (pieces[BISHOP] == 1 or pieces[KNIGHT] == 1)):
+            return True
+
+        #/* kb vs. kb where any number of bishops are all on the same color */
+        elif (num_pieces == pieces[BISHOP] + 2):
+            tot = 0
+            length = len(bishops)
+            for i in range(length):
+                tot += bishops[i]
+            if (tot == 0 or tot == length):
+                return True
         
+        return False
 
-        # 4th criterion: 4th field is a valid e.p.-string? */
-        if (not re.search('^(-|[abcdefgh][36])$', tokens[3]):
-            return {'valid': False, 'error_number': 4, 'error:' errors[4]}
-        
+    def in_threefold_repetition(self):
+        # /* TODO: while this function is fine for casual use, a better
+        #  * implementation would use a Zobrist key (instead of FEN). the
+        #  * Zobrist key would be maintained in the make_move/undo_move functions,
+        #  * avoiding the costly that we do below.
+        #  */
+        moves = []
+        positions = {}
+        repetition = False
 
-        # 5th criterion: 3th field is a valid castle-string? */
-        if( not re.search('^(KQ?k?q?|Qk?q?|kq?|q|-)$',tokens[2])) :
-            return {'valid': False, 'error_number': 5, 'error:' errors[5]}
-        
+        while True:
+            move = self.undo_move()
+            if (not move):
+                break
+            moves.append(move)
 
-        # 6th criterion: 2nd field is "w" (white) or "b" (black)? */
-        if (not re.search('^(w|b)$', tokens[1])) :
-            return {'valid': False, 'error_number': 6, 'error:' errors[6]}
-        
+        while (True):
+            # /* remove the last two fields in the FEN string, they're not needed
+            #  * when checking for draw by rep */
+            fen = generate_fen(self).split(' ')[0:4].join(' ')
 
-        # 7th criterion: 1st field contains 8 rows? */
-        rows = tokens[0].split('/')
-        if (len(rows) != 8):
-            return {'valid': False, 'error_number': 7, 'error:' errors[7]}
-        
+            # /* has the position occurred three or move times */
+            positions[fen] = positions[fen] +1 if (fen in positions) else 1
+            if (positions[fen] >= 3) {
+                repetition = True
+            }
 
-        # 8th criterion: every row is valid? */
-        for (i in range(len(rows))):
-            # check for right sum of fields AND not two numbers in succession */
-            sum_fields = 0
-            previous_was_number = False
+            if (not len(moves)):
+                break
+            
+            self.make_move(moves.pop())
 
-            for (k = 0 k < rows[i].length k++):
-                if (!isNaN(rows[i][k])):
-                    if (previous_was_number):
-                        return {'valid': False, 'error_number': 8, 'error': errors[8]}
-                    sum_fields += parseInt(rows[i][k], 10)
-                    previous_was_number = True
-                else:
-                    if (!/^[prnbqkPRNBQK]$/.test(rows[i][k])):
-                        return {'valid': False, 'error_number': 9, 'error': errors[9]}
-                    sum_fields += 1
-                    previous_was_number = False
-            if (sum_fields != 8):
-                return {'valid': False, 'error_number': 10, 'error': errors[10]}
+        return repetition
 
-        if ((tokens[3][1] == '3' and tokens[1] == 'w') or \
-            (tokens[3][1] == '6' and tokens[1] == 'b')):
-            return {'valid': False, 'error_number': 11, 'error': errors[11]}
+    def push(self, move):
+        self.history.append({
+            'move': move,
+            'kings': {'b': self.kings['b'], 'w': self.kings['w']},
+            'turn': self.turn,
+            'castling': {'b': self.castling['b'], 'w': self.castling['w']},
+            'ep_square': self.ep_square,
+            'half_moves': self.half_moves,
+            'move_number': self.move_number
+        })
+        return
 
-        # everything's okay! */
-        return {'valid': True, 'error_number': 0, 'error': errors[0]}
+    def make_move(move):
+        us = self.turn
+        them = swap_color(us)
+        self.push(move)
 
+        self.board[move['to']] = self.board[move['from']]
+        self.board[move['from']] = None
+
+        # /* if ep capture, remove the captured pawn */
+        if (move['flags'] & BITS['EP_CAPTURE']):
+            if (self.turn == BLACK):
+                self.board[move['to'] - 16] = None
+            else:
+                self.board[move['to'] + 16] = None
+
+        # /* if pawn promotion, replace with new piece */
+        if (move['flags'] & BITS['PROMOTION']):
+            self.board[move['to']] = {'type': move['promotion'], 'color': us}
+
+        # /* if we moved the king */
+        if (board[move['to']]['type'] == KING):
+            kings[board[move['to']]['color']] = move['to']]
+
+            # /* if we castled, move the rook next to the king */
+            if (move['flags'] & BITS['KSIDE_CASTLE']):
+                castling_to = move['to'] - 1
+                castling_from = move['to'] + 1
+                self.board[castling_to] = self.board[castling_from]
+                self.board[castling_from] = None
+            elif (move['flags'] & BITS['QSIDE_CASTLE']):
+                castling_to = move['to'] + 1
+                castling_from = move['to'] - 2
+                self.board[castling_to] = self.board[castling_from]
+                self.board[castling_from] = None
+
+            # /* turn off castling */
+            self.castling[us] = None
+        }
+
+        # /* turn off castling if we move a rook */
+        if (self.castling[us]):
+            i = 0
+            while i < len(ROOKS[us]):
+                if (move['from'] == ROOKS[us][i]['square'] and \
+                    self.castling[us] & ROOKS[us][i]['flag']):
+                    self.castling[us] ^= ROOKS[us][i]['flag']
+                    break
+                i+=1
+
+        # /* turn off castling if we capture a rook */
+        if (self.castling[them]):
+            i = 0
+            while i < len(ROOKS[them]):
+                if (move['to']] == ROOKS[them][i]['square'] and \
+                    self.castling[them] & ROOKS[them][i]['flag']):
+                    self.castling[them] ^= ROOKS[them][i]['flag']
+                    break
+                }
+                i+=1
+
+        # /* if big pawn move, update the en passant square */
+        if (move['flags'] & BITS['BIG_PAWN']):
+            if (turn == 'b'):
+                self.ep_square = move['to'] - 16
+            else:
+                self.ep_square = move['to'] + 16
+        else:
+            self.ep_square = EMPTY
+
+        # /* reset the 50 move counter if a pawn is moved or a piece is captured */
+        if (move['piece'] == PAWN):
+            self.half_moves = 0
+        elif (move['flags'] & (BITS['CAPTURE'] | BITS['EP_CAPTURE'])):
+            self.half_moves = 0
+        else:
+            self.half_moves+=1
+
+        if (self.turn == BLACK):
+            self.move_number+=1
+
+        self.turn = swap_color(self.turn)
+        return
+
+    def undo_move():
+        old = history.pop()
+        if (old is None):
+            return None
+
+        move = old['move']
+        self.kings = old['kings']
+        self.turn = old['turn']
+        self.castling = old['castling']
+        self.ep_square = old['ep_square']
+        self.half_moves = old['half_moves']
+        self.move_number = old['move_number']
+
+        us = self.turn
+        them = swap_color(self.turn)
+
+        self.board[move['from']] = self.board[move['to']]
+        self.board[move['from']]['type'] = move['piece']  # to undo any promotions
+        self.board[move['to']] = None
+
+        if (move['flags'] & BITS['CAPTURE']):
+            self.board[move['to']] = {'type': move['captured'], 'color': them}
+        elif (move['flags'] & BITS['EP_CAPTURE']):
+            if (us == BLACK):
+                index = move['to'] - 16
+            else:
+                index = move['to'] + 16
+            self.board[index] = {'type': PAWN, 'color': them}
+
+
+        if (move['flags'] & (BITS['KSIDE_CASTLE'] | BITS['QSIDE_CASTLE'])):
+            if (move['flags'] & BITS['KSIDE_CASTLE']):
+                castling_to = move['to'] + 1
+                castling_from = move['to'] - 1
+            elif (move['flags'] & BITS['QSIDE_CASTLE']):
+                castling_to = move['to'] - 2
+                castling_from = move['to'] + 1
+
+            self.board[castling_to] = self.board[castling_from]
+            self.board[castling_from] = None
+
+        return move
+
+
+    def get_disambiguator(self, move, sloppy):
+        '''/* this function is used to uniquely identify ambiguous moves */'''
+        moves = self.generate_moves({legal: !sloppy})
+
+        from_sq = move['from']
+        to_sq = move['to']
+        piece = move['piece']
+
+        ambiguities = 0
+        same_rank = 0
+        same_file = 0
+
+        i = 0
+        while i < len(moves):
+            ambig_from = moves[i]['from']
+            ambig_to = moves[i]['to']
+            ambig_piece = moves[i]['piece']
+
+            # /* if a move of the same piece type ends on the same to square, we'll
+            #  * need to add a disambiguator to the algebraic notation
+            #  */
+            if (piece == ambig_piece and from_sq != ambig_from and to_sq == ambig_to):
+                ambiguities+=1
+                if (rank(from_sq) == rank(ambig_from)):
+                    same_rank+=1
+                if (col_file(from_sq) == col_file(ambig_from)):
+                    same_file+=1
+
+        if (ambiguities > 0):
+            # /* if there exists a similar moving piece on the same rank and file as
+            #  * the move in question, use the square as the disambiguator
+            #  */
+            if (same_rank > 0 and same_file > 0):
+                return algebraic(from_sq)
+            # /* if the moving piece rests on the same file, use the rank symbol as the
+            #  * disambiguator
+            #  */
+            elif (same_file > 0):
+                return algebraic(from_sq)[1]
+            # /* else use the file symbol */
+            else:
+                return algebraic(from_sq)[0]
+
+        return None
 
     # add [][] indexer syntax to the Board
     def __getitem__(self, index): 
