@@ -670,6 +670,94 @@ class Board():
 
         return None
 
+    ####################################################
+    ################### Other Things ###################
+    ####################################################
+    def get_board(self):
+        output = []
+        row    = []
+
+        for i in range(SQUARES['a8'], SQUARES['h1']+1):
+            if (board[i] == null) {
+                row.append(None)
+            else:
+                row.append({'type': board[i]['type'], 'color': board[i]['color']})
+            
+            if ((i + 1) & 0x88):
+                output.append(row)
+                row = []
+                i += 8
+
+        return output
+
+    def get_pgn(self, options=None):
+        return None
+
+    def move(self, options=None):
+        '''/* The move function can be called with in the following parameters:
+         *
+         * .move('Nxb7')      <- where 'move' is a case-sensitive SAN string
+         *
+         * .move({ from: 'h7', <- where the 'move' is a move object (additional
+         *         to :'h8',      fields are ignored)
+         *         promotion: 'q',
+         *      })
+         */'''
+
+        # // allow the user to specify the sloppy move parser to work around over
+        # // disambiguation bugs in Fritz and Chessbase
+        sloppy = options['sloppy'] if (options is dict and 'sloppy' in options.keys()) else false
+
+        move_obj = None
+
+        if (move is str):
+            move_obj = move_from_san(move, sloppy);
+        elif (move is dict):
+            moves = self.generate_moves();
+
+            # /* convert the pretty move object to an ugly move object */
+            for (i in range(len(moves))):
+                if (move['from'] == algebraic(moves[i]['from']) and \
+                    move['to'] == algebraic(moves[i]['to']) and \
+                    (!('promotion' in moves[i].keys()) or \
+                    move['promotion'] == moves[i]['promotion'])):
+                    move_obj = moves[i]
+                    break
+
+        # /* failed to find move */
+        if (!move_obj):
+            return None
+
+        # /* need to make a copy of move because we can't generate SAN after the
+        #  * move is made
+        #  */
+        pretty_move = make_pretty(self, move_obj)
+
+        self.make_move(move_obj)
+
+        return pretty_move
+
+    def get_history(self, options):
+        reversed_history = []
+        move_history = []
+        verbose = (options is dict and 'verbose' in options.keys() and \
+        options['verbose']);
+
+        while (len(history) > 0):
+            reversed_history.append(self.undo_move())
+
+        while (len(reversed_history) > 0) {
+            var move = reversed_history.pop();
+            if (verbose) {
+                move_history.append(make_pretty(self, move));
+            } else {
+                move_history.append(move_to_san(self, move));
+            }
+            self.make_move(move);
+        }
+
+        return move_history;
+
     # add [][] indexer syntax to the Board
     def __getitem__(self, index): 
         return self.pieces[index]

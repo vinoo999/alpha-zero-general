@@ -12,8 +12,8 @@ class ChessGame(Game):
 
     def getInitBoard(self):
         # return initial board (numpy board)
-        b = Board(self.n)
-        return np.array(b.pieces)
+        b = Board()
+        return np.array(b.get_board())
 
     def getBoardSize(self):
         # (a,b) tuple
@@ -21,7 +21,8 @@ class ChessGame(Game):
 
     def getActionSize(self):
         # return number of actions
-        return self.n*self.n + 1
+        num_pieces = 32
+        return self.n*self.n*num_pieces
 
     def getNextState(self, board, player, action):
         # if player takes action on board, return next (board,player)
