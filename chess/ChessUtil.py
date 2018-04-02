@@ -7,47 +7,54 @@ from ChessConstants import *
  # ****************************************************************************/
 
 def generate_fen(chess):
-    board = chess.board
     empty = 0
     fen = ''
 
-    for (i in range(SQUARES.a8, SQUARES.h1+1)):
-        if (board[i] == None):
+    i = SQUARES['a8']
+    while i < SQUARES['h1'] + 1:
+    # for i in range(SQUARES['a8'], SQUARES['h1']+1):
+        if (chess.board[i] == None):
             empty+=1
         else:
             if (empty > 0):
-                fen += empty
+                fen += str(empty)
                 empty = 0
-            color = board[i]['color']
-            piece = board[i]['type']
+            color = chess.board[i]['color']
+            piece = chess.board[i]['type']
 
-            fen += piece.upper() if (color === WHITE) else piece.lower()
+            fen += piece.upper() if (color == WHITE) else piece.lower()
 
         if ((i + 1) & 0x88):
             if (empty > 0):
-                fen += empty
+                fen += str(empty)
 
-            if (i != SQUARES.h1):
+            if (i != SQUARES['h1']):
+                # print("ADDING A /: {} {}".format(i, fen))
                 fen += '/'
 
             empty = 0
             i += 8
 
+        i+=1
+
     cflags = ''
-    if (castling[WHITE] & BITS.KSIDE_CASTLE):
+    if (chess.castling[WHITE] & BITS['KSIDE_CASTLE']):
         cflags += 'K'
-    if (castling[WHITE] & BITS.QSIDE_CASTLE):
+    if (chess.castling[WHITE] & BITS['QSIDE_CASTLE']):
         cflags += 'Q'
-    if (castling[BLACK] & BITS.KSIDE_CASTLE):
+    if (chess.castling[BLACK] & BITS['KSIDE_CASTLE']):
         cflags += 'k'
-    if (castling[BLACK] & BITS.QSIDE_CASTLE):
+    if (chess.castling[BLACK] & BITS['QSIDE_CASTLE']):
         cflags += 'q'
 
     # /* do we have an empty castling flag? */
     cflags = cflags or '-'
-    epflags = '-' if (ep_square === EMPTY) else algebraic(ep_square)
+    chess.epflags = '-' if (chess.ep_square == EMPTY) else algebraic(chess.ep_square)
 
-    return [fen, turn, cflags, epflags, half_moves, move_number].join(' ')
+
+    out_arr = [fen, chess.turn, cflags, chess.epflags, chess.half_moves, chess.move_number]
+    out_arr = map(str, out_arr)
+    return ' '.join(out_arr)
 
 def validate_fen(fen):
         errors = {
@@ -67,63 +74,63 @@ def validate_fen(fen):
 
         # 1st criterion: 6 space-seperated fields? */
         tokens = re.split('\s+', fen)
-        if (tokens.length != 6):
+        if (len(tokens) != 6):
             return {'valid': False, 'error_number': 1, 'error': errors[1]}
         
 
         # 2nd criterion: move number field is a integer value > 0? */
-        if (tokens[5] is None or int(tokens[5] <= 0)):
-            return {'valid': False, 'error_number': 2, 'error:' errors[2]}
+        if (not tokens[5].isdigit() or int(tokens[5]) <= 0):
+            return {'valid': False, 'error_number': 2, 'error' : errors[2]}
         
 
         # 3rd criterion: half move counter is an integer >= 0? */
-        if (tokens[4] is None or int(tokens[4]) < 0)):
-            return {'valid': False, 'error_number': 3, 'error:' errors[3]}
+        if (not tokens[4].isdigit() or int(tokens[4]) < 0):
+            return {'valid': False, 'error_number': 3, 'error': errors[3]}
         
 
         # 4th criterion: 4th field is a valid e.p.-string? */
-        if (not re.search('^(-|[abcdefgh][36])$', tokens[3]):
-            return {'valid': False, 'error_number': 4, 'error:' errors[4]}
+        if (not re.search('^(-|[abcdefgh][36])$', tokens[3])):
+            return {'valid': False, 'error_number': 4, 'error': errors[4]}
         
 
         # 5th criterion: 3th field is a valid castle-string? */
         if( not re.search('^(KQ?k?q?|Qk?q?|kq?|q|-)$',tokens[2])) :
-            return {'valid': False, 'error_number': 5, 'error:' errors[5]}
+            return {'valid': False, 'error_number': 5, 'error': errors[5]}
         
 
         # 6th criterion: 2nd field is "w" (white) or "b" (black)? */
         if (not re.search('^(w|b)$', tokens[1])) :
-            return {'valid': False, 'error_number': 6, 'error:' errors[6]}
+            return {'valid': False, 'error_number': 6, 'error': errors[6]}
         
 
         # 7th criterion: 1st field contains 8 rows? */
         rows = tokens[0].split('/')
         if (len(rows) != 8):
-            return {'valid': False, 'error_number': 7, 'error:' errors[7]}
+            return {'valid': False, 'error_number': 7, 'error': errors[7]}
         
 
         # 8th criterion: every row is valid? */
-        for (i in range(len(rows))):
+        for i in range(len(rows)):
             # check for right sum of fields AND not two numbers in succession */
             sum_fields = 0
             previous_was_number = False
 
-            for (k = 0 k < rows[i].length k++):
-                if (!isNaN(rows[i][k])):
+            for k in range(len(rows[i])): 
+                if (rows[i][k].isdigit()):
                     if (previous_was_number):
                         return {'valid': False, 'error_number': 8, 'error': errors[8]}
-                    sum_fields += parseInt(rows[i][k], 10)
+                    sum_fields += int(rows[i][k])
                     previous_was_number = True
                 else:
-                    if (!/^[prnbqkPRNBQK]$/.test(rows[i][k])):
+                    if (not re.search('^[prnbqkPRNBQK]$',rows[i][k])):
                         return {'valid': False, 'error_number': 9, 'error': errors[9]}
                     sum_fields += 1
                     previous_was_number = False
             if (sum_fields != 8):
                 return {'valid': False, 'error_number': 10, 'error': errors[10]}
 
-        if ((tokens[3][1] == '3' and tokens[1] == 'w') or \
-            (tokens[3][1] == '6' and tokens[1] == 'b')):
+        if (tokens[3] != '-' and ((tokens[3][1] == '3' and tokens[1] == 'w') or \
+            (tokens[3][1] == '6' and tokens[1] == 'b'))):
             return {'valid': False, 'error_number': 11, 'error': errors[11]}
 
         # everything's okay! */
@@ -142,7 +149,9 @@ def move_to_san(chess, move, sloppy=None) :
      */'''
 
     output = ''
-
+    print("MOVE:", move)
+    print("FLAGS:", move['flags'])
+    print("FROM: {} TO: {}".format(move['from'], move['to']))
     if (move['flags'] & BITS['KSIDE_CASTLE']):
         output = 'O-O'
     elif (move['flags'] & BITS['QSIDE_CASTLE']):
@@ -150,10 +159,12 @@ def move_to_san(chess, move, sloppy=None) :
     else:
         disambiguator = chess.get_disambiguator(move, sloppy)
 
-        if (move['piece'] !== PAWN):
+        if (move['piece'] != PAWN):
+            print("PIECE: ",move['piece'])
+            print("DISAMBIG: ", disambiguator)
             output += move['piece'].upper() + disambiguator
 
-        if (move['flags'] & (BITS['CAPTURE'] | BITS['EP_CAPTURE']):
+        if (move['flags'] & (BITS['CAPTURE'] | BITS['EP_CAPTURE'])):
             if (move['piece'] == PAWN):
                 output += algebraic(move['from'])[0]
             output += 'x'
@@ -174,22 +185,27 @@ def move_to_san(chess, move, sloppy=None) :
     return output
 
 def ascii(chess):
+    board = chess.board
     s = '   +------------------------+\n'
-    for i in range(SQUARES['a8'], SQUARES['h1']+1):
+    i = SQUARES['a8']
+    while i < SQUARES['h1'] + 1:
+    # for i in range(SQUARES['a8'], SQUARES['h1']+1):
         # /* display the rank */
-        if (file(i) === 0):
+        if (col_file(i) == 0):
             s += ' ' + '87654321'[rank(i)] + ' |'
         # /* empty piece */
-        if (board[i] == null):
+        if (board[i] == None):
             s += ' . '
         else:
             piece = board[i]['type']
             color = board[i]['color']
-            symbol = piece.upper() if (color === WHITE) else piece.lower()
+            symbol = piece.upper() if (color == WHITE) else piece.lower()
             s += ' ' + symbol + ' '
         if ((i + 1) & 0x88):
             s += '|\n'
             i += 8
+
+        i += 1
     s += '   +------------------------+\n'
     s += '     a  b  c  d  e  f  g  h\n'
 
@@ -198,6 +214,8 @@ def ascii(chess):
 # // parses all of the decorators out of a SAN string
 def stripped_san(move):
     return move.replace('=','').replace('[+#]?[?!]*$','')
+
+
 def rank(i):
     return i >> 4
 
@@ -219,13 +237,13 @@ def is_digit(c):
 # /* pretty = external move object */
 def make_pretty(chess, ugly_move):
     move = copy.deepcopy(ugly_move)
-    move['san'] = move_to_san(chess, False)
+    move['san'] = move_to_san(chess, move, False)
     move['to'] = algebraic(move['to'])
     move['from'] = algebraic(move['from'])
 
     flags = ''
 
-    for ( flag in BITS):
+    for flag in BITS:
         if (BITS[flag] & move['flags']):
             flags += FLAGS[flag]
     move['flags'] = flags
@@ -255,15 +273,17 @@ def perft(chess, depth):
     color = turn
 
     i = 0
-    while ( i < len(moves)):
+    while i < len(moves):
         make_move(moves[i])
-        if (!king_attacked(color)):
+        if (not king_attacked(color)):
             if (depth - 1 > 0):
-                 child_nodes = perft(depth - 1)
+                child_nodes = perft(depth - 1)
                 nodes += child_nodes
             else:
                 nodes+=1
         chess.undo_move()
         i+=1
     return nodes
-}
+
+
+

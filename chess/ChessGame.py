@@ -1,9 +1,12 @@
 from __future__ import print_function
 import sys
+from ChessLogic import Board
+from ChessUtil import swap_color, ascii
+from ChessConstants import *
 sys.path.append('..')
 from Game import Game
-from .ChessLogic import Board
 import numpy as np
+import copy
 
 
 class ChessGame(Game):
@@ -12,25 +15,55 @@ class ChessGame(Game):
 
     def getInitBoard(self):
         # return initial board (numpy board)
-        b = Board()
-        return np.array(b.get_board())
+        game = Board()
+        return np.array(game.get_board_mcts())
 
     def getBoardSize(self):
         # (a,b) tuple
-        return (self.n, self.n)
+        return (self.n+1, self.n)
 
     def getActionSize(self):
         # return number of actions
-        num_pieces = 32
-        return self.n*self.n*num_pieces
+        return self.n**4 + 16*4 + 1
+
 
     def getNextState(self, board, player, action):
         # if player takes action on board, return next (board,player)
         # action must be a valid move
-        if action == self.n*self.n:
+
+        game = Board(mcts_board=board)
+        player_color = WHITE if player==1 else BLACK
+        if game.turn != player_color:
+            return (None, None)
+
+        if action == self.getActionSize()-1:
+            game.turn = swap_color(game.turn)
+            board = np.array(game.get_board_mcts())
             return (board, -player)
-        b = Board(self.n)
-        b.pieces = np.copy(board)
+
+        elif action < self.getActionSize() - 16*4 - 1:
+            tmp = action // 64
+            rank1 = 'abcdefgh'[tmp//8]
+            file1 = '87654321'[tmp%8]
+            pos1 = rank1 + file1
+            tmp2 = action % 64
+            rank2 = 'abcdefgh'[tmp2//8]
+            file2 = '87654321'[tmp2%8]
+            pos2 = rank2 + file2
+
+            move = {'from' : pos1, 'to' : pos2}
+            game.do_move(move)
+            next_board = np.array(game.get_board_mcts())
+
+            return (next_board, -player)
+
+        else:
+            game.turn = swap_color(game.turn)
+            board = np.array(game.get_board_mcts())
+            return (board, -player)
+
+
+
         move = (int(action/self.n), action%self.n)
         b.execute_move(move, player)
         return (b.pieces, -player)
@@ -66,20 +99,8 @@ class ChessGame(Game):
         return player*board
 
     def getSymmetries(self, board, pi):
-        # mirror, rotational
-        assert(len(pi) == self.n**2+1)  # 1 for pass
-        pi_board = np.reshape(pi[:-1], (self.n, self.n))
-        l = []
-
-        for i in range(1, 5):
-            for j in [True, False]:
-                newB = np.rot90(board, i)
-                newPi = np.rot90(pi_board, i)
-                if j:
-                    newB = np.fliplr(newB)
-                    newPi = np.fliplr(newPi)
-                l += [(newB, list(newPi.ravel()) + [pi[-1]])]
-        return l
+        '''Chess is not symmetrical return size 1 list of [board]'''
+        return [board]
 
     def stringRepresentation(self, board):
         # 8x8 numpy array (canonical board)
@@ -91,23 +112,5 @@ class ChessGame(Game):
         return b.countDiff(player)
 
 def display(board):
-    n = board.shape[0]
-
-    for y in range(n):
-        print (y,"|",end="")
-    print("")
-    print(" -----------------------")
-    for y in range(n):
-        print(y, "|",end="")    # print the row #
-        for x in range(n):
-            piece = board[y][x]    # get the piece to print
-            if piece == -1: print("b ",end="")
-            elif piece == 1: print("W ",end="")
-            else:
-                if x==n:
-                    print("-",end="")
-                else:
-                    print("- ",end="")
-        print("|")
-
-    print("   -----------------------")
+    game = Board(mcts_board=board)
+    print(ascii(game))

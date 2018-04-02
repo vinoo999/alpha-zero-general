@@ -32,6 +32,26 @@ PIECE_OFFSETS = {
     'k': [-17, -16, -15,   1,  17, 16, 15,  -1]
 }
 
+MCTS_MAPPING = {
+    'p' : 1,
+    'n' : 2,
+    'b' : 3,
+    'r' : 4,
+    'q' : 5,
+    'k' : 6,
+}
+
+MCTS_DECODER = {
+    1 : 'p',
+    2 : 'n',
+    3 : 'b',
+    4 : 'r',
+    5 : 'q',
+    6 : 'k'
+}
+
+MCTS_COLOR_MAP = { 'w' : 1, 'b' : -1}
+
 ATTACKS = [
     20,0, 0, 0, 0, 0, 0, 24,  0, 0, 0, 0, 0, 0,20, 0,
     0, 20,0, 0, 0, 0, 0, 24,  0, 0, 0, 0, 0,20, 0, 0,
@@ -111,8 +131,8 @@ SQUARES = {
 }
 
 ROOKS = {
-    'w': [{'square': SQUARES[a1], 'flag': BITS[QSIDE_CASTLE]},
-        {'square': SQUARES[h1], 'flag': BITS[KSIDE_CASTLE]}],
-    'b': [{'square': SQUARES[a8], 'flag': BITS[QSIDE_CASTLE]},
-        {'square': SQUARES[h8], 'flag': BITS[KSIDE_CASTLE]}]
+    'w': [{'square': SQUARES['a1'], 'flag': BITS['QSIDE_CASTLE']},
+        {'square': SQUARES['h1'], 'flag': BITS['KSIDE_CASTLE']}],
+    'b': [{'square': SQUARES['a8'], 'flag': BITS['QSIDE_CASTLE']},
+        {'square': SQUARES['h8'], 'flag': BITS['KSIDE_CASTLE']}]
 }

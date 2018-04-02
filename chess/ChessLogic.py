@@ -13,6 +13,7 @@ x is the column, y is the row.
 import re
 from ChessConstants import *
 from ChessUtil import *
+import numpy as np
 
 class Board():
 
@@ -20,38 +21,28 @@ class Board():
     ############################ SET UP METHODS #################
     #############################################################
 
-    def __init__(self, fen=None):
+    def __init__(self, fen=None, mcts_board=None):
         "Set up initial board configuration."
 
-        self.board = np.empty((128,))
-        self.kings = {w: EMPTY, b: EMPTY}
+        self.board = [None]*128
+        self.kings = {'w': EMPTY, 'b': EMPTY}
         self.turn = WHITE
-        self.castling = {w: 0, b: 0}
+        self.castling = {'w': 0, 'b': 0}
         self.ep_square = EMPTY
         self.half_moves = 0
         self.move_number = 1
         self.history = []
         self.header = {}
 
-        if fen is None:
+        if fen is None and mcts_board is None:
             self.load(DEFAULT_POSITION)
-        else:
+        elif mcts_board is None:
             self.load(fen)
-
-        self.n = n
-        # Create the empty board array.
-        self.pieces = [None]*self.n
-        for i in range(self.n):
-            self.pieces[i] = [0]*self.n
-
-        # Set up the initial 4 pieces.
-        self.pieces[int(self.n/2)-1][int(self.n/2)] = 1
-        self.pieces[int(self.n/2)][int(self.n/2)-1] = 1
-        self.pieces[int(self.n/2)-1][int(self.n/2)-1] = -1
-        self.pieces[int(self.n/2)][int(self.n/2)] = -1
+        else: 
+            self.load_mcts(mcts_board)
 
     def clear(self):
-        self.board = np.empty((128,))
+        self.board = [None]*128
         self.kings = {'w': EMPTY, 'b': EMPTY}
         self.turn = WHITE
         self.castling = {'w': 0, 'b': 0}
@@ -82,10 +73,9 @@ class Board():
         else:
             self.header['SetUp'] = None
             self.header['FEN'] = None
-        }
 
     def load(self, fen):
-        tokens = re.split(('\s+',fen))
+        tokens = re.split('\s+',fen)
         position = tokens[0]
         square = 0
 
@@ -93,41 +83,67 @@ class Board():
             return False
 
         self.clear()
-
+        print(position, len(position))
         for i in range(len(position)):
             piece = position[i]
-
             if (piece == '/'):
                 square += 8
             elif (is_digit(piece)):
-                square += parseInt(piece, 10)
+                square += int(piece)
             else:
                 color = WHITE if piece < 'a' else BLACK
-                put({'type': piece.lower(), 'color': color}, algebraic(square))
+                self.put({'type': piece.lower(), 'color': color}, algebraic(square))
                 square+=1
-            
-        
 
         self.turn = tokens[1]
 
-        if (tokens[2].indexOf('K') > -1) {
+        if (tokens[2].index('K') > -1):
             self.castling['w'] |= BITS['KSIDE_CASTLE']
-        }
-        if (tokens[2].indexOf('Q') > -1) {
+        if (tokens[2].index('Q') > -1):
             self.castling['w'] |= BITS['QSIDE_CASTLE']
-        }
-        if (tokens[2].indexOf('k') > -1) {
+        if (tokens[2].index('k') > -1):
             self.castling['b'] |= BITS['KSIDE_CASTLE']
-        }
-        if (tokens[2].indexOf('q') > -1) {
+        if (tokens[2].index('q') > -1):
             self.castling['b'] |= BITS['QSIDE_CASTLE']
-        }
 
-        self.ep_square = EMPTY if (tokens[3] == '-') ? else SQUARES[tokens[3]]
+        self.ep_square = EMPTY if (tokens[3] == '-') else SQUARES[tokens[3]]
         self.half_moves = int(tokens[4])
         self.move_number = int(tokens[5])
 
-        self.update_setup(generate_fen())
+        self.update_setup(generate_fen(self))
+
+        return True
+
+    def load_mcts(self, board):
+        self.clear()
+
+        if board.shape != (9,8):
+            return False
+
+        files = 'abcdefgh'
+        ranks = '87654321'
+        for i in range(len(board)-1):
+            r = ranks[i]
+            for j in range(len(board[0])):
+                f = files[j]
+                pos = f+r
+                if board[i,j]:
+                    piece = board[i,j]
+                    piece_type = MCTS_DECODER[abs(piece)]
+                    piece_color = WHITE if piece > 0 else BLACK
+                    self.board[SQUARES[pos]] = {'type': piece_type, 'color':piece_color}
+                else:
+                    self.board[SQUARES[pos]] = None
+
+        states = board[len(board)-1]
+        self.kings['w'] = states[0]
+        self.kings['b'] = states[1]
+        self.turn = WHITE if states[2] == 1 else BLACK
+        self.castling['w'] = states[3]
+        self.castling['b'] = states[4]
+        self.ep_square = states[5]
+        self.half_moves = states[6]
+        self.move_number = states[7]
 
         return True
 
@@ -147,13 +163,14 @@ class Board():
         return {'type': piece['type'], 'color': piece['color']} if piece else None
 
     def put(self, piece, square):
+        # print("PIECE: {}, SQUARE: {}".format(piece, square))
         # /* check for valid piece object */
-        if piece is dict:
-            if (!('type' in piece.keys() and 'color' in piece.keys())):
+        if isinstance(piece,dict):
+            if (not ('type' in piece.keys() and 'color' in piece.keys())):
                 return False
 
         # /* check for piece */
-        if piece[type].lower() in SYMBOLS:
+        if piece['type'].lower() not in SYMBOLS:
             return False
 
         # /* check for valid square */
@@ -164,13 +181,12 @@ class Board():
 
         # /* don't let the user place more than one king */
         if (piece['type'] == KING and \
-            !(kings[piece['color']] == EMPTY or kings[piece['color']] == sq)):
+            not (self.kings[piece['color']] == EMPTY or self.kings[piece['color']] == sq)):
             return False
-        }
 
         self.board[sq] = {'type': piece['type'], 'color': piece['color']}
         if (piece['type'] == KING):
-            kings[piece['color']] = sq
+            self.kings[piece['color']] = sq
 
         self.update_setup(generate_fen(self))
 
@@ -180,7 +196,7 @@ class Board():
         piece = self.get(square)
         self.board[SQUARES[square]] = None
         if (piece and piece['type'] == KING):
-            kings[piece['color']] = EMPTY
+            self.kings[piece['color']] = EMPTY
 
         self.update_setup(generate_fen(self))
 
@@ -189,9 +205,9 @@ class Board():
     def build_move(self, from_sq, to_sq, flags, promotion=None):
 
         move = {
-            'color': turn,
+            'color': self.turn,
             'from': from_sq,
-            'to': to,
+            'to': to_sq,
             'flags': flags,
             'piece': self.board[from_sq]['type']
         }
@@ -201,7 +217,7 @@ class Board():
             move['promotion'] = promotion
 
         if (self.board[to_sq]):
-            move['captured'] = board[to_sq]['type']
+            move['captured'] = self.board[to_sq]['type']
         elif (flags & BITS['EP_CAPTURE']):
             move['captured'] = PAWN
         return move
@@ -231,10 +247,10 @@ class Board():
         single_square = False
 
         # /* do we want legal moves? */
-        legal = options['legal'] if (options is dict and 'legal' in options.keys()) else True
+        legal = options['legal'] if (isinstance(options,dict) and 'legal' in options.keys()) else True
 
         # /* are we generating moves for a single square? */
-        if (options is dict and 'square' in options.keys()):
+        if (isinstance(options,dict) and 'square' in options.keys()):
             if (options['square'] in SQUARES.keys()):
                 first_sq = SQUARES[options['square']]
                 last_sq = SQUARES[options['square']]
@@ -274,11 +290,11 @@ class Board():
                     if (square & 0x88): 
                         continue
 
-                    if (board[square] is not None and \
-                        board[square]['color'] == them):
+                    if (self.board[square] is not None and \
+                        self.board[square]['color'] == them):
                         self.add_move(moves, i, square, BITS['CAPTURE'])
-                    elif (square == ep_square):
-                        self.add_move(moves, i, ep_square, BITS['EP_CAPTURE'])
+                    elif (square == self.ep_square):
+                        self.add_move(moves, i, self.ep_square, BITS['EP_CAPTURE'])
 
             #######################################
             ####### ALL OTHER PIECES ##############
@@ -295,7 +311,7 @@ class Board():
                             break
 
                         if (self.board[square] is None):
-                            add_move(board, moves, i, square, BITS['NORMAL'])
+                            self.add_move(moves, i, square, BITS['NORMAL'])
                         else:
                             if (self.board[square]['color'] == us):
                                 break
@@ -310,32 +326,32 @@ class Board():
         #############################################
         ########### CASTLING ########################
         #############################################
-        if ((not single_square) or last_sq == kings[us]):
+        if ((not single_square) or last_sq == self.kings[us]):
             # /* king-side castling */
-            if (castling[us] & BITS['KSIDE_CASTLE']):
-                castling_from = kings[us]
+            if (self.castling[us] & BITS['KSIDE_CASTLE']):
+                castling_from = self.kings[us]
                 castling_to = castling_from + 2
 
                 if (self.board[castling_from + 1] == None and \
                     self.board[castling_to]       == None and \
-                    !attacked(them, kings[us]) and \
-                    !attacked(them, castling_from + 1) and \
-                    !attacked(them, castling_to)):
-                    self.add_move(moves, kings[us] , castling_to,
+                    not attacked(them, self.kings[us]) and \
+                    not attacked(them, castling_from + 1) and \
+                    not attacked(them, castling_to)):
+                    self.add_move(moves, self.kings[us] , castling_to,
                         BITS['KSIDE_CASTLE'])
 
             # /* queen-side castling */
-            if (castling[us] & BITS['QSIDE_CASTLE']) {
-                castling_from = kings[us]
+            if (self.castling[us] & BITS['QSIDE_CASTLE']):
+                castling_from = self.kings[us]
                 castling_to = castling_from - 2
 
-                if (board[castling_from - 1] == None and \
-                    board[castling_from - 2] == None and \
-                    board[castling_from - 3] == None and \
-                    !attacked(them, kings[us]) and \
-                    !attacked(them, castling_from - 1) and \
-                    !attacked(them, castling_to)):
-                    self.add_move(moves, kings[us], castling_to,\
+                if (self.board[castling_from - 1] == None and \
+                    self.board[castling_from - 2] == None and \
+                    self.board[castling_from - 3] == None and \
+                    not attacked(them, self.kings[us]) and \
+                    not attacked(them, castling_from - 1) and \
+                    not attacked(them, castling_to)):
+                    self.add_move(moves, self.kings[us], castling_to,\
                         BITS['QSIDE_CASTLE'])
 
         # /* return all pseudo-legal moves (this includes moves that allow the king
@@ -349,7 +365,7 @@ class Board():
         i = 0
         while (i< len(moves)):
             self.make_move(moves[i])
-            if (!king_attacked(us)):
+            if (not self.king_attacked(us)):
                 legal_moves.append(moves[i])
             self.undo_move()
             i+= 1
@@ -389,7 +405,7 @@ class Board():
                 j = i + offset
 
                 blocked = False
-                while (j != square) {
+                while (j != square):
                     if (self.board[j] is not None):
                         blocked = True
                         break
@@ -401,7 +417,7 @@ class Board():
         return False
 
     def king_attacked(self, color):
-        return self.attacked(swap_color(color), kings[color])
+        return self.attacked(swap_color(color), self.kings[color])
 
     def in_check(self):
         return self.king_attacked(self.turn)
@@ -425,14 +441,11 @@ class Board():
                 continue
 
             piece = self.board[i]
-            if (piece) {
+            if (piece):
                 pieces[piece['type']] = pieces[piece['type']] + 1 if (piece['type'] in pieces.keys()) else 1
                 if (piece['type'] == BISHOP):
                     bishops.append(sq_color)
                 num_pieces+=1
-            }
-        }
-
         #/* k vs. k */
         if (num_pieces == 2):
             return True
@@ -475,9 +488,8 @@ class Board():
 
             # /* has the position occurred three or move times */
             positions[fen] = positions[fen] +1 if (fen in positions) else 1
-            if (positions[fen] >= 3) {
+            if (positions[fen] >= 3):
                 repetition = True
-            }
 
             if (not len(moves)):
                 break
@@ -498,7 +510,7 @@ class Board():
         })
         return
 
-    def make_move(move):
+    def make_move(self, move):
         us = self.turn
         them = swap_color(us)
         self.push(move)
@@ -518,8 +530,8 @@ class Board():
             self.board[move['to']] = {'type': move['promotion'], 'color': us}
 
         # /* if we moved the king */
-        if (board[move['to']]['type'] == KING):
-            kings[board[move['to']]['color']] = move['to']]
+        if (self.board[move['to']]['type'] == KING):
+            self.kings[self.board[move['to']]['color']] = move['to']
 
             # /* if we castled, move the rook next to the king */
             if (move['flags'] & BITS['KSIDE_CASTLE']):
@@ -535,7 +547,6 @@ class Board():
 
             # /* turn off castling */
             self.castling[us] = None
-        }
 
         # /* turn off castling if we move a rook */
         if (self.castling[us]):
@@ -551,16 +562,15 @@ class Board():
         if (self.castling[them]):
             i = 0
             while i < len(ROOKS[them]):
-                if (move['to']] == ROOKS[them][i]['square'] and \
+                if (move['to'] == ROOKS[them][i]['square'] and \
                     self.castling[them] & ROOKS[them][i]['flag']):
                     self.castling[them] ^= ROOKS[them][i]['flag']
                     break
-                }
                 i+=1
 
         # /* if big pawn move, update the en passant square */
         if (move['flags'] & BITS['BIG_PAWN']):
-            if (turn == 'b'):
+            if (self.turn == 'b'):
                 self.ep_square = move['to'] - 16
             else:
                 self.ep_square = move['to'] + 16
@@ -581,8 +591,8 @@ class Board():
         self.turn = swap_color(self.turn)
         return
 
-    def undo_move():
-        old = history.pop()
+    def undo_move(self):
+        old = self.history.pop()
         if (old is None):
             return None
 
@@ -627,7 +637,7 @@ class Board():
 
     def get_disambiguator(self, move, sloppy):
         '''/* this function is used to uniquely identify ambiguous moves */'''
-        moves = self.generate_moves({legal: !sloppy})
+        moves = self.generate_moves({'legal': not sloppy})
 
         from_sq = move['from']
         to_sq = move['to']
@@ -652,6 +662,7 @@ class Board():
                     same_rank+=1
                 if (col_file(from_sq) == col_file(ambig_from)):
                     same_file+=1
+            i+=1
 
         if (ambiguities > 0):
             # /* if there exists a similar moving piece on the same rank and file as
@@ -668,7 +679,7 @@ class Board():
             else:
                 return algebraic(from_sq)[0]
 
-        return None
+        return ''
 
     ####################################################
     ################### Other Things ###################
@@ -677,23 +688,75 @@ class Board():
         output = []
         row    = []
 
-        for i in range(SQUARES['a8'], SQUARES['h1']+1):
-            if (board[i] == null) {
+        i = SQUARES['a8']
+        while i < SQUARES['h1'] + 1:
+        # for i in range(SQUARES['a8'], SQUARES['h1']+1):
+            if (self.board[i] == None):
                 row.append(None)
             else:
-                row.append({'type': board[i]['type'], 'color': board[i]['color']})
+                row.append({'type': self.board[i]['type'], 'color': self.board[i]['color']})
+            
+            if ((i + 1) & 0x88):
+                output.append(row)
+                row = []
+                i += 8
+            i+=1
+
+        return output
+
+    def get_board_mcts(self):
+        output = []
+        row    = []
+
+        i = SQUARES['a8']
+        while i < SQUARES['h1'] + 1:
+        # for i in range(SQUARES['a8'], SQUARES['h1']+1):
+            if (self.board[i] == None):
+                row.append(0)
+            else:
+                piece = MCTS_MAPPING[self.board[i]['type']] * MCTS_COLOR_MAP[self.board[i]['color']]
+                row.append(piece)
             
             if ((i + 1) & 0x88):
                 output.append(row)
                 row = []
                 i += 8
 
+            i+=1
+
+        king1 = self.kings['w']
+        king2 = self.kings['b']
+        player = 1 if self.turn == WHITE else -1
+        castle1 = self.castling['w']
+        castle2 = self.castling['b']
+        ep_square = self.ep_square
+        half_moves = self.half_moves
+        move_number = self.move_number
+
+        row = [king1,king2, player, castle1, castle2, ep_square, half_moves, move_number]
+        output.append(row)
+
+        # row.append()
+
+
+
+        # self.board = np.empty((64,))
+        # self.kings = {w: EMPTY, b: EMPTY}
+        # self.turn = WHITE
+        # self.castling = {w: 0, b: 0}
+        # self.ep_square = EMPTY
+        # self.half_moves = 0
+        # self.move_number = 1
+        # self.history = []
+        # self.header = {}
+
+
         return output
 
     def get_pgn(self, options=None):
         return None
 
-    def move(self, options=None):
+    def do_move(self, move, options=None):
         '''/* The move function can be called with in the following parameters:
          *
          * .move('Nxb7')      <- where 'move' is a case-sensitive SAN string
@@ -706,26 +769,27 @@ class Board():
 
         # // allow the user to specify the sloppy move parser to work around over
         # // disambiguation bugs in Fritz and Chessbase
-        sloppy = options['sloppy'] if (options is dict and 'sloppy' in options.keys()) else false
+        sloppy = options['sloppy'] if (isinstance(options,dict) and 'sloppy' in options.keys()) else False
 
         move_obj = None
 
-        if (move is str):
-            move_obj = move_from_san(move, sloppy);
-        elif (move is dict):
-            moves = self.generate_moves();
+        if (isinstance(move, str)):
+            move_obj = move_from_san(move, sloppy)
+        elif (isinstance(move,dict)):
+            moves = self.generate_moves()
 
             # /* convert the pretty move object to an ugly move object */
-            for (i in range(len(moves))):
+            for i in range(len(moves)):
                 if (move['from'] == algebraic(moves[i]['from']) and \
                     move['to'] == algebraic(moves[i]['to']) and \
-                    (!('promotion' in moves[i].keys()) or \
+                    (('promotion' not in moves[i].keys()) or \
                     move['promotion'] == moves[i]['promotion'])):
                     move_obj = moves[i]
+                    print(move_obj)
                     break
 
         # /* failed to find move */
-        if (!move_obj):
+        if (not move_obj):
             return None
 
         # /* need to make a copy of move because we can't generate SAN after the
@@ -737,157 +801,158 @@ class Board():
 
         return pretty_move
 
+    def undo(self):
+        move = self.undo_move()
+        return make_pretty(self, move) if (move) else None   
+
     def get_history(self, options):
         reversed_history = []
         move_history = []
-        verbose = (options is dict and 'verbose' in options.keys() and \
-        options['verbose']);
+        verbose = (isinstance(options,dict) and 'verbose' in options.keys() and options['verbose'])
 
         while (len(history) > 0):
             reversed_history.append(self.undo_move())
 
-        while (len(reversed_history) > 0) {
-            var move = reversed_history.pop();
-            if (verbose) {
-                move_history.append(make_pretty(self, move));
-            } else {
-                move_history.append(move_to_san(self, move));
-            }
-            self.make_move(move);
-        }
+        while (len(reversed_history) > 0):
+            move = reversed_history.pop()
+            if (verbose):
+                move_history.append(make_pretty(self, move))
+            else:
+                move_history.append(move_to_san(self, move))
+            self.make_move(move)
 
-        return move_history;
+        return move_history
 
-    # add [][] indexer syntax to the Board
-    def __getitem__(self, index): 
-        return self.pieces[index]
+    # # add [][] indexer syntax to the Board
+    # def __getitem__(self, index): 
+    #     return self.pieces[index]
 
-    def countDiff(self, color):
-        """Counts the # pieces of the given color
-        (1 for white, -1 for black, 0 for empty spaces)"""
-        count = 0
-        for y in range(self.n):
-            for x in range(self.n):
-                if self[x][y]==color:
-                    count += 1
-                if self[x][y]==-color:
-                    count -= 1
-        return count
+    # def countDiff(self, color):
+    #     """Counts the # pieces of the given color
+    #     (1 for white, -1 for black, 0 for empty spaces)"""
+    #     count = 0
+    #     for y in range(self.n):
+    #         for x in range(self.n):
+    #             if self[x][y]==color:
+    #                 count += 1
+    #             if self[x][y]==-color:
+    #                 count -= 1
+    #     return count
 
-    def get_legal_moves(self, color):
-        """Returns all the legal moves for the given color.
-        (1 for white, -1 for black
-        """
-        moves = set()  # stores the legal moves.
+    # def get_legal_moves(self, color):
+    #     """Returns all the legal moves for the given color.
+    #     (1 for white, -1 for black
+    #     """
+    #     moves = set()  # stores the legal moves.
 
-        # Get all the squares with pieces of the given color.
-        for y in range(self.n):
-            for x in range(self.n):
-                if self[x][y]==color:
-                    newmoves = self.get_moves_for_square((x,y))
-                    moves.update(newmoves)
-        return list(moves)
+    #     # Get all the squares with pieces of the given color.
+    #     for y in range(self.n):
+    #         for x in range(self.n):
+    #             if self[x][y]==color:
+    #                 newmoves = self.get_moves_for_square((x,y))
+    #                 moves.update(newmoves)
+    #     return list(moves)
 
-    def has_legal_moves(self, color):
-        for y in range(self.n):
-            for x in range(self.n):
-                if self[x][y]==color:
-                    newmoves = self.get_moves_for_square((x,y))
-                    if len(newmoves)>0:
-                        return True
-        return False
+    # def has_legal_moves(self, color):
+    #     for y in range(self.n):
+    #         for x in range(self.n):
+    #             if self[x][y]==color:
+    #                 newmoves = self.get_moves_for_square((x,y))
+    #                 if len(newmoves)>0:
+    #                     return True
+    #     return False
 
-    def get_moves_for_square(self, square):
-        """Returns all the legal moves that use the given square as a base.
-        That is, if the given square is (3,4) and it contains a black piece,
-        and (3,5) and (3,6) contain white pieces, and (3,7) is empty, one
-        of the returned moves is (3,7) because everything from there to (3,4)
-        is flipped.
-        """
-        (x,y) = square
+    # def get_moves_for_square(self, square):
+    #     """Returns all the legal moves that use the given square as a base.
+    #     That is, if the given square is (3,4) and it contains a black piece,
+    #     and (3,5) and (3,6) contain white pieces, and (3,7) is empty, one
+    #     of the returned moves is (3,7) because everything from there to (3,4)
+    #     is flipped.
+    #     """
+    #     (x,y) = square
 
-        # determine the color of the piece.
-        color = self[x][y]
+    #     # determine the color of the piece.
+    #     color = self[x][y]
 
-        # skip empty source squares.
-        if color==0:
-            return None
+    #     # skip empty source squares.
+    #     if color==0:
+    #         return None
 
-        # search all possible directions.
-        moves = []
-        for direction in self.__directions:
-            move = self._discover_move(square, direction)
-            if move:
-                # print(square,move,direction)
-                moves.append(move)
+    #     # search all possible directions.
+    #     moves = []
+    #     for direction in self.__directions:
+    #         move = self._discover_move(square, direction)
+    #         if move:
+    #             # print(square,move,direction)
+    #             moves.append(move)
 
-        # return the generated move list
-        return moves
+    #     # return the generated move list
+    #     return moves
 
-    def execute_move(self, move, color):
-        """Perform the given move on the board flips pieces as necessary.
-        color gives the color pf the piece to play (1=white,-1=black)
-        """
+    # def execute_move(self, move, color):
+    #     """Perform the given move on the board flips pieces as necessary.
+    #     color gives the color pf the piece to play (1=white,-1=black)
+    #     """
 
-        #Much like move generation, start at the new piece's square and
-        #follow it on all 8 directions to look for a piece allowing flipping.
+    #     #Much like move generation, start at the new piece's square and
+    #     #follow it on all 8 directions to look for a piece allowing flipping.
 
-        # Add the piece to the empty square.
-        # print(move)
-        flips = [flip for direction in self.__directions
-                      for flip in self._get_flips(move, direction, color)]
-        assert len(list(flips))>0
-        for x, y in flips:
-            #print(self[x][y],color)
-            self[x][y] = color
+    #     # Add the piece to the empty square.
+    #     # print(move)
+    #     flips = [flip for direction in self.__directions
+    #                   for flip in self._get_flips(move, direction, color)]
+    #     assert len(list(flips))>0
+    #     for x, y in flips:
+    #         #print(self[x][y],color)
+    #         self[x][y] = color
 
-    def _discover_move(self, origin, direction):
-        """ Returns the endpoint for a legal move, starting at the given origin,
-        moving by the given increment."""
-        x, y = origin
-        color = self[x][y]
-        flips = []
+    # def _discover_move(self, origin, direction):
+    #     """ Returns the endpoint for a legal move, starting at the given origin,
+    #     moving by the given increment."""
+    #     x, y = origin
+    #     color = self[x][y]
+    #     flips = []
 
-        for x, y in Board._increment_move(origin, direction, self.n):
-            if self[x][y] == 0:
-                if flips:
-                    # print("Found", x,y)
-                    return (x, y)
-                else:
-                    return None
-            elif self[x][y] == color:
-                return None
-            elif self[x][y] == -color:
-                # print("Flip",x,y)
-                flips.append((x, y))
+    #     for x, y in Board._increment_move(origin, direction, self.n):
+    #         if self[x][y] == 0:
+    #             if flips:
+    #                 # print("Found", x,y)
+    #                 return (x, y)
+    #             else:
+    #                 return None
+    #         elif self[x][y] == color:
+    #             return None
+    #         elif self[x][y] == -color:
+    #             # print("Flip",x,y)
+    #             flips.append((x, y))
 
-    def _get_flips(self, origin, direction, color):
-        """ Gets the list of flips for a vertex and direction to use with the
-        execute_move function """
-        #initialize variables
-        flips = [origin]
+    # def _get_flips(self, origin, direction, color):
+    #     """ Gets the list of flips for a vertex and direction to use with the
+    #     execute_move function """
+    #     #initialize variables
+    #     flips = [origin]
 
-        for x, y in Board._increment_move(origin, direction, self.n):
-            #print(x,y)
-            if self[x][y] == 0:
-                return []
-            if self[x][y] == -color:
-                flips.append((x, y))
-            elif self[x][y] == color and len(flips) > 0:
-                #print(flips)
-                return flips
+    #     for x, y in Board._increment_move(origin, direction, self.n):
+    #         #print(x,y)
+    #         if self[x][y] == 0:
+    #             return []
+    #         if self[x][y] == -color:
+    #             flips.append((x, y))
+    #         elif self[x][y] == color and len(flips) > 0:
+    #             #print(flips)
+    #             return flips
 
-        return []
+    #     return []
 
-    @staticmethod
-    def _increment_move(move, direction, n):
-        # print(move)
-        """ Generator expression for incrementing moves """
-        move = list(map(sum, zip(move, direction)))
-        #move = (move[0]+direction[0], move[1]+direction[1])
-        while all(map(lambda x: 0 <= x < n, move)): 
-        #while 0<=move[0] and move[0]<n and 0<=move[1] and move[1]<n:
-            yield move
-            move=list(map(sum,zip(move,direction)))
-            #move = (move[0]+direction[0],move[1]+direction[1])
+    # @staticmethod
+    # def _increment_move(move, direction, n):
+    #     # print(move)
+    #     """ Generator expression for incrementing moves """
+    #     move = list(map(sum, zip(move, direction)))
+    #     #move = (move[0]+direction[0], move[1]+direction[1])
+    #     while all(map(lambda x: 0 <= x < n, move)): 
+    #     #while 0<=move[0] and move[0]<n and 0<=move[1] and move[1]<n:
+    #         yield move
+    #         move=list(map(sum,zip(move,direction)))
+    #         #move = (move[0]+direction[0],move[1]+direction[1])
 
