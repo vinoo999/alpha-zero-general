@@ -260,20 +260,41 @@ def make_pretty(chess, ugly_move):
 
 def evaluate_board(mcts_board, player):
     board = mcts_board[0:8,:]
-    board = board if player == 1 else board[::-1]
 
     val = 0
     for i in range(8):
         for j in range(8):
-            val += 1
+            piece = MCTS_DECODER[abs(board[i,j])]
+            sign = -1 if board[i,j] < 0 else 1
+            val += get_piece_value(piece,i,j, sign)
 
     return val
 
-def get_piece_value(piece, i, j):
-    if (piece is None):
-        return 0
+def get_piece_value(piece, i, j, color):
+    eval_map = {
+        'p' : PAWN_EVAL,
+        'n' : KNIGHT_EVAL,
+        'b' : BISHOP_EVAL,
+        'r' : ROOK_EVAL,
+        'q' : QUEEN_EVAL,
+        'k' : KING_EVAL
+    }
 
-    return 0
+    eval_offset = {
+        'p' : 10,
+        'n' : 30,
+        'b' : 30,
+        'r' : 50,
+        'q' : 90,
+        'k' : 900
+    }
+
+    eval_mat = eval_map[piece]
+
+    if piece > 0:
+        return eval_offset[piece] + eval_mat[j][i]
+    else:
+        return color*(eval_offset[piece] + eval_mat[::-1][j][i])
 
 
 def trim(str):
