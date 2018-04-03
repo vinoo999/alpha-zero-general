@@ -1,8 +1,8 @@
 from __future__ import print_function
 import sys
-from ChessLogic import Board
-from ChessUtil import *
-from ChessConstants import *
+from .ChessLogic import Board
+from .ChessUtil import *
+from .ChessConstants import *
 sys.path.append('..')
 from Game import Game
 import numpy as np
@@ -140,12 +140,12 @@ class ChessGame(Game):
         old_row = board[len(board)-1]
         row = np.zeros(old_row.shape)
 
-        row[0] = mirror_num[old_row[0]] # king 1
-        row[1] = mirror_num[old_row[1]] # king 1
+        row[0] = mirror_num(old_row[0]) # king 1
+        row[1] = mirror_num(old_row[1]) # king 2
         row[2] = old_row[2]*-1
         row[3] = old_row[4]
         row[4] = old_row[3]
-        row[5] = -1*old_row[5]
+        row[5] = -1 if old_row[5] == -1 else mirror_num(old_row[5])
         row[6] = old_row[6]
         row[7] = old_row[7]
 
@@ -154,8 +154,8 @@ class ChessGame(Game):
         return new_board
 
     def getSymmetries(self, board, pi):
-        '''Chess is not symmetrical return size 1 list of [board]'''
-        return [board]
+        '''Chess is not symmetrical'''
+        return [(board,pi)]
 
     def stringRepresentation(self, board):
         # 8x8 numpy array (canonical board)

@@ -11,8 +11,8 @@ Squares are stored and manipulated as (x,y) tuples.
 x is the column, y is the row.
 '''
 import re
-from ChessConstants import *
-from ChessUtil import *
+from .ChessConstants import *
+from .ChessUtil import *
 import numpy as np
 
 class Board():
@@ -83,7 +83,7 @@ class Board():
             return False
 
         self.clear()
-        print(position, len(position))
+        # print(position, len(position))
         for i in range(len(position)):
             piece = position[i]
             if (piece == '/'):
@@ -136,14 +136,14 @@ class Board():
                     self.board[SQUARES[pos]] = None
 
         states = board[len(board)-1]
-        self.kings['w'] = states[0]
-        self.kings['b'] = states[1]
+        self.kings['w'] = int(states[0])
+        self.kings['b'] = int(states[1])
         self.turn = WHITE if states[2] == 1 else BLACK
-        self.castling['w'] = states[3]
-        self.castling['b'] = states[4]
-        self.ep_square = states[5]
-        self.half_moves = states[6]
-        self.move_number = states[7]
+        self.castling['w'] = int(states[3])
+        self.castling['b'] = int(states[4])
+        self.ep_square = int(states[5])
+        self.half_moves = int(states[6])
+        self.move_number = int(states[7])
 
         return True
 
@@ -327,6 +327,7 @@ class Board():
         ########### CASTLING ########################
         #############################################
         if ((not single_square) or last_sq == self.kings[us]):
+            # print("CASTLING: ", self.castling)
             # /* king-side castling */
             if (self.castling[us] & BITS['KSIDE_CASTLE']):
                 castling_from = self.kings[us]
@@ -373,6 +374,7 @@ class Board():
         return legal_moves
 
     def attacked(self, color, square):
+        square = int(square)
         for i in range(SQUARES['a8'], SQUARES['h1']):
             # /* did we run off the end of the board */
             if (i & 0x88):
@@ -598,11 +600,14 @@ class Board():
 
         move = old['move']
         self.kings = old['kings']
+        for key in old['kings'].keys():
+            self.kings[key] = int(old['kings'][key])
         self.turn = old['turn']
-        self.castling = old['castling']
-        self.ep_square = old['ep_square']
-        self.half_moves = old['half_moves']
-        self.move_number = old['move_number']
+        for key in old['castling'].keys():
+            self.castling[key] = int(old['castling'][key])
+        self.ep_square = int(old['ep_square'])
+        self.half_moves = int(old['half_moves'])
+        self.move_number = int(old['move_number'])
 
         us = self.turn
         them = swap_color(self.turn)
@@ -727,8 +732,8 @@ class Board():
         king1 = self.kings['w']
         king2 = self.kings['b']
         player = 1 if self.turn == WHITE else -1
-        castle1 = self.castling['w']
-        castle2 = self.castling['b']
+        castle1 = int(self.castling['w'])
+        castle2 = int(self.castling['b'])
         ep_square = self.ep_square
         half_moves = self.half_moves
         move_number = self.move_number
@@ -785,7 +790,7 @@ class Board():
                     (('promotion' not in moves[i].keys()) or \
                     move['promotion'] == moves[i]['promotion'])):
                     move_obj = moves[i]
-                    print(move_obj)
+                    # print(move_obj)
                     break
 
         # /* failed to find move */

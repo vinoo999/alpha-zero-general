@@ -1,6 +1,6 @@
 import re
 import copy
-from ChessConstants import *
+from .ChessConstants import *
 
 # /*****************************************************************************
  # * UTILITY FUNCTIONS
@@ -149,9 +149,9 @@ def move_to_san(chess, move, sloppy=None) :
      */'''
 
     output = ''
-    print("MOVE:", move)
-    print("FLAGS:", move['flags'])
-    print("FROM: {} TO: {}".format(move['from'], move['to']))
+    # print("MOVE:", move)
+    # print("FLAGS:", move['flags'])
+    # print("FROM: {} TO: {}".format(move['from'], move['to']))
     if (move['flags'] & BITS['KSIDE_CASTLE']):
         output = 'O-O'
     elif (move['flags'] & BITS['QSIDE_CASTLE']):
@@ -160,8 +160,8 @@ def move_to_san(chess, move, sloppy=None) :
         disambiguator = chess.get_disambiguator(move, sloppy)
 
         if (move['piece'] != PAWN):
-            print("PIECE: ",move['piece'])
-            print("DISAMBIG: ", disambiguator)
+            # print("PIECE: ",move['piece'])
+            # print("DISAMBIG: ", disambiguator)
             output += move['piece'].upper() + disambiguator
 
         if (move['flags'] & (BITS['CAPTURE'] | BITS['EP_CAPTURE'])):
