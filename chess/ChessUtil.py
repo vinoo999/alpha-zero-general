@@ -229,6 +229,14 @@ def algebraic(i):
     ranks = '87654321'
     return files[f] + ranks[r]
 
+def mirror_num(i):
+    f = col_file(i)
+    r = rank(i)
+    files = 'hgfedcba'
+    ranks = '12345678'
+    pos = files[f] + ranks[r]
+    return SQUARES[pos]
+
 def swap_color(c):
     return BLACK if c==WHITE else WHITE
 
@@ -250,16 +258,23 @@ def make_pretty(chess, ugly_move):
 
     return move
 
-# def clone(obj):
-#     dupe = (obj instanceof Array) ? [] : {}
+def evaluate_board(mcts_board, player):
+    board = mcts_board[0:8,:]
+    board = board if player == 1 else board[::-1]
 
-#     for ( property in obj):
-#         if (typeof property === 'object'):
-#             dupe[property] = clone(obj[property])
-#         else:
-#             dupe[property] = obj[property]
+    val = 0
+    for i in range(8):
+        for j in range(8):
+            val += 1
 
-#     return dupe
+    return val
+
+def get_piece_value(piece, i, j):
+    if (piece is None):
+        return 0
+
+    return 0
+
 
 def trim(str):
     return str.replace('^\s+|\s+$', '')
