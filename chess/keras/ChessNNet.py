@@ -7,7 +7,7 @@ from keras.models import *
 from keras.layers import *
 from keras.optimizers import *
 
-class OthelloNNet():
+class ChessNNet():
     def __init__(self, game, args):
         # game params
         self.board_x, self.board_y = game.getBoardSize()
