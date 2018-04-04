@@ -1,5 +1,7 @@
 import math
 import numpy as np
+from chess.ChessUtil import decode_move
+from chess.ChessGame import display
 EPS = 1e-8
 
 class MCTS():
@@ -32,8 +34,8 @@ class MCTS():
             self.search(canonicalBoard)
 
         s = self.game.stringRepresentation(canonicalBoard)
+        # print(canonicalBoard)
         counts = [self.Nsa[(s,a)] if (s,a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
-
         if temp==0:
             bestA = np.argmax(counts)
             probs = [0]*len(counts)
@@ -111,8 +113,16 @@ class MCTS():
                     best_act = a
 
         a = best_act
+        print("CURRENT CANONICAL\n", canonicalBoard)
+        display(canonicalBoard)
+        where = np.where(valids==1)
+        testing = list(map(decode_move, list(np.where(valids==1))[0]))
+        print("ALL ACTIONS\n {} \n {}", list(np.where(valids==1))[0], testing)
+        print("BEST ACTION",a, decode_move(a))
         next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
+        print("NEXT S NEXT PLAYER\n", next_s, next_player)
         next_s = self.game.getCanonicalForm(next_s, next_player)
+        print("NEW CANONICAL\n", next_s)
 
         v = self.search(next_s)
 

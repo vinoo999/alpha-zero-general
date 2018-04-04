@@ -321,5 +321,42 @@ def perft(chess, depth):
         i+=1
     return nodes
 
+def decode_move(action):
+
+    if action == 64*64-1:
+        return "Switch Player"
+
+    elif action < 64*64+64*4+1 - 64*4 - 1:
+        tmp = action // 64
+        file1 = 'abcdefgh'[tmp//8]
+        rank1 = '87654321'[tmp%8]
+        pos1 = file1 + rank1
+        tmp2 = action % 64
+        file2 = 'abcdefgh'[tmp2//8]
+        rank2 = '87654321'[tmp2%8]
+        pos2 = file2 + rank2
+
+        move = {'from' : pos1, 'to' : pos2}
+
+        return move
+
+    else:
+        action_offset = action - 64*64
+        tmp = action_offset // 16
+        file1 = 'abcdefgh'[tmp//2]
+        rank1 = '72'[tmp%2]
+        rank2 = '81'[tmp%2]
+
+        tmp2 = action_offset % 16
+        promotion = tmp2//4 + 2
+        direction = tmp2%4
+        file2 = 'abcdefgh'[(tmp//2) + (direction-1)*player]
+
+        pos1 = file1 + rank1
+        pos2 = file2 + rank2
+        move = {'from' : pos1, 'to' : pos2, 'promotion' : MCTS_DECODER[promotion]}
+
+        return move
+
 
 

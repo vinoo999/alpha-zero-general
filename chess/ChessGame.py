@@ -138,10 +138,10 @@ class ChessGame(Game):
         new_board = -1*board[0:8,:][::-1]
 
         old_row = board[len(board)-1]
-        row = np.zeros(old_row.shape)
+        row = np.zeros(old_row.shape, dtype=int)
 
-        row[0] = mirror_num(old_row[0]) # king 1
-        row[1] = mirror_num(old_row[1]) # king 2
+        row[0] = mirror_num(old_row[1]) # king 1
+        row[1] = mirror_num(old_row[0]) # king 2
         row[2] = old_row[2]*-1
         row[3] = old_row[4]
         row[4] = old_row[3]
