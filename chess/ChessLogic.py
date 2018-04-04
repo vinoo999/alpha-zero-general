@@ -115,6 +115,8 @@ class Board():
         return True
 
     def load_mcts(self, board):
+        # print("LOADING MCTS BOARD")
+        # print(board)
         self.clear()
 
         if board.shape != (9,8):
@@ -335,9 +337,9 @@ class Board():
 
                 if (self.board[castling_from + 1] == None and \
                     self.board[castling_to]       == None and \
-                    not attacked(them, self.kings[us]) and \
-                    not attacked(them, castling_from + 1) and \
-                    not attacked(them, castling_to)):
+                    not self.attacked(them, self.kings[us]) and \
+                    not self.attacked(them, castling_from + 1) and \
+                    not self.attacked(them, castling_to)):
                     self.add_move(moves, self.kings[us] , castling_to,
                         BITS['KSIDE_CASTLE'])
 
@@ -349,9 +351,9 @@ class Board():
                 if (self.board[castling_from - 1] == None and \
                     self.board[castling_from - 2] == None and \
                     self.board[castling_from - 3] == None and \
-                    not attacked(them, self.kings[us]) and \
-                    not attacked(them, castling_from - 1) and \
-                    not attacked(them, castling_to)):
+                    not self.attacked(them, self.kings[us]) and \
+                    not self.attacked(them, castling_from - 1) and \
+                    not self.attacked(them, castling_to)):
                     self.add_move(moves, self.kings[us], castling_to,\
                         BITS['QSIDE_CASTLE'])
 
@@ -548,7 +550,7 @@ class Board():
                 self.board[castling_from] = None
 
             # /* turn off castling */
-            self.castling[us] = None
+            self.castling[us] = 0
 
         # /* turn off castling if we move a rook */
         if (self.castling[us]):

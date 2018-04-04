@@ -232,7 +232,7 @@ def algebraic(i):
 def mirror_num(i):
     f = col_file(i)
     r = rank(i)
-    files = 'hgfedcba'
+    files = 'abcdefgh'
     ranks = '12345678'
     pos = files[f] + ranks[r]
     return SQUARES[pos]
@@ -350,6 +350,8 @@ def decode_move(action):
         tmp2 = action_offset % 16
         promotion = tmp2//4 + 2
         direction = tmp2%4
+
+        player = 1 if tmp%2 == 0 else -1
         file2 = 'abcdefgh'[(tmp//2) + (direction-1)*player]
 
         pos1 = file1 + rank1

@@ -32,11 +32,17 @@ class ChessGame(Game):
     def getNextState(self, board, player, action):
         # if player takes action on board, return next (board,player)
         # action must be a valid move
+        # print("Board input to getNExtState \n")
+        # display(board)
+
+        # new_board = self.getCanonicalForm(board, player)
+        # player = 1
 
         game = Board(mcts_board=board)
+        
         player_color = WHITE if player==1 else BLACK
-        if game.turn != player_color:
-            return (None, None)
+        # if game.turn != player_color:
+        #     return (None, None)
 
         if action == self.getActionSize()-1:
             game.turn = swap_color(game.turn)
@@ -119,11 +125,11 @@ class ChessGame(Game):
         # return 0 if not ended, 1 if player 1 won, -1 if player 1 lost
         # player = 1
         b = Board(mcts_board=board)
-        b.turn = WHITE if player == 1 else BLACK
+        # b.turn = WHITE if player == 1 else BLACK
 
         if b.in_checkmate():
             return -1
-        if b.in_stalemate() or b.insufficient_material():
+        if b.in_stalemate() or b.insufficient_material() or b.move_number > 50:
             return 1e-5
         b.turn = swap_color(b.turn)
         if b.in_checkmate():
@@ -132,26 +138,45 @@ class ChessGame(Game):
         return 0
 
     def getCanonicalForm(self, board, player):
-        if player == 1: # WHITE
-            return board
+        
+        # if board[board.shape[0]-1][2] == 1: # WHITE
+        #     return board
 
-        new_board = -1*board[0:8,:][::-1]
+        # new_board = -1*board[0:8,:][::-1]
 
-        old_row = board[len(board)-1]
-        row = np.zeros(old_row.shape, dtype=int)
 
-        row[0] = mirror_num(old_row[1]) # king 1
-        row[1] = mirror_num(old_row[0]) # king 2
-        row[2] = old_row[2]*-1
-        row[3] = old_row[4]
-        row[4] = old_row[3]
-        row[5] = -1 if old_row[5] == -1 else mirror_num(old_row[5])
-        row[6] = old_row[6]
-        row[7] = old_row[7]
+        # old_row = board[len(board)-1]
+        # row = np.zeros(old_row.shape, dtype=int)
 
-        new_board = np.vstack((new_board, row))
+        # row[0] = mirror_num(old_row[1]) # king 1
+        # row[1] = mirror_num(old_row[0]) # king 2
+        # row[2] = 1 # canonical is always player White.
+        # row[3] = old_row[4]
+        # row[4] = old_row[3]
+        # row[5] = -1 if old_row[5] == -1 else mirror_num(old_row[5])
+        # row[6] = old_row[6]
+        # row[7] = old_row[7]
+
+        # new_board = np.vstack((new_board, row))
+
+        # new_board = -1*board[0:8,:]
+
+        # old_row = board[len(board)-1]
+        # row = np.zeros(old_row.shape, dtype=int)
+
+        # row[0] = old_row[1] # king 1
+        # row[1] = old_row[0] # king 2
+        # row[2] = 1 # canonical is always player White.
+        # row[3] = old_row[4]
+        # row[4] = old_row[3]
+        # row[5] = old_row[5]
+        # row[6] = old_row[6]
+        # row[7] = old_row[7]
+
+        # new_board = np.vstack((new_board, row))
         # return state if player==1, else return -state if player==-1
-        return new_board
+        # return new_board
+        return board 
 
     def getSymmetries(self, board, pi):
         '''Chess is not symmetrical'''

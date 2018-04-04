@@ -6,7 +6,8 @@ from pytorch_classification.utils import Bar, AverageMeter
 import time, os, sys
 from pickle import Pickler, Unpickler
 from random import shuffle
-
+from chess.ChessUtil import decode_move
+from chess.ChessGame import display
 
 class Coach():
     """
@@ -45,20 +46,25 @@ class Coach():
 
         while True:
             episodeStep += 1
+            # print("BOARD IN COACH: \n", board, self.curPlayer)
             canonicalBoard = self.game.getCanonicalForm(board,self.curPlayer)
             temp = int(episodeStep < self.args.tempThreshold)
-
+            # print("CANONICAL BOARD IN COACH: \n", canonicalBoard)
             pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
             sym = self.game.getSymmetries(canonicalBoard, pi)
             for b,p in sym:
                 trainExamples.append([b, self.curPlayer, p, None])
 
             action = np.random.choice(len(pi), p=pi)
+            print("Calling get next state from coach: ")
+            display(board)
+            print("Cur Player {} \n move {} i: {} ".format(self.curPlayer, decode_move(action), episodeStep))
             board, self.curPlayer = self.game.getNextState(board, self.curPlayer, action)
 
             r = self.game.getGameEnded(board, self.curPlayer)
 
             if r!=0:
+                display(board)
                 return [(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples]
 
     def learn(self):

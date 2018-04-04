@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from chess.ChessUtil import decode_move
+from chess.ChessUtil import decode_move, algebraic
 from chess.ChessGame import display
 EPS = 1e-8
 
@@ -30,7 +30,9 @@ class MCTS():
             probs: a policy vector where the probability of the ith action is
                    proportional to Nsa[(s,a)]**(1./temp)
         """
+        # print("GET ACTION PROB CALLED")
         for i in range(self.args.numMCTSSims):
+            # print("SEARCH FROM GETACTIONPROB: (nummctssims size) ", self.args.numMCTSSims, i)
             self.search(canonicalBoard)
 
         s = self.game.stringRepresentation(canonicalBoard)
@@ -66,7 +68,9 @@ class MCTS():
         Returns:
             v: the negative of the value of the current canonicalBoard
         """
-
+        # print("STARTING SEARCH: \n", canonicalBoard)
+        # display(canonicalBoard)
+        # print(algebraic(canonicalBoard[-1, 0]))
         s = self.game.stringRepresentation(canonicalBoard)
 
         if s not in self.Es:
@@ -113,17 +117,19 @@ class MCTS():
                     best_act = a
 
         a = best_act
-        print("CURRENT CANONICAL\n", canonicalBoard)
-        display(canonicalBoard)
+        # print("CURRENT CANONICAL\n", canonicalBoard)
+        
         where = np.where(valids==1)
         testing = list(map(decode_move, list(np.where(valids==1))[0]))
-        print("ALL ACTIONS\n {} \n {}", list(np.where(valids==1))[0], testing)
-        print("BEST ACTION",a, decode_move(a))
+        # print("ALL ACTIONS\n {} \n {}", list(np.where(valids==1))[0], testing)
+        # print("BEST ACTION",a, decode_move(a))
+        # print("Calling getNextState from MCTS")
         next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
-        print("NEXT S NEXT PLAYER\n", next_s, next_player)
+        # print("NEXT S NEXT PLAYER\n", next_s, next_player)
         next_s = self.game.getCanonicalForm(next_s, next_player)
-        print("NEW CANONICAL\n", next_s)
+        # print("NEW CANONICAL\n", next_s)
 
+        # print("move before search: \n", a, decode_move(a))
         v = self.search(next_s)
 
         if (s,a) in self.Qsa:
