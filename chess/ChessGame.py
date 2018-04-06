@@ -139,44 +139,44 @@ class ChessGame(Game):
 
     def getCanonicalForm(self, board, player):
         
-        # if board[board.shape[0]-1][2] == 1: # WHITE
-        #     return board
+        if board[board.shape[0]-1][2] == 1: # WHITE
+            return board
 
-        # new_board = -1*board[0:8,:][::-1]
+        new_board = -1*board[0:8,:][::-1]
 
 
-        # old_row = board[len(board)-1]
-        # row = np.zeros(old_row.shape, dtype=int)
+        old_row = board[len(board)-1]
+        row = np.zeros(old_row.shape, dtype=int)
 
-        # row[0] = mirror_num(old_row[1]) # king 1
-        # row[1] = mirror_num(old_row[0]) # king 2
-        # row[2] = 1 # canonical is always player White.
-        # row[3] = old_row[4]
-        # row[4] = old_row[3]
-        # row[5] = -1 if old_row[5] == -1 else mirror_num(old_row[5])
-        # row[6] = old_row[6]
-        # row[7] = old_row[7]
+        row[0] = mirror_num(old_row[1]) # king 1
+        row[1] = mirror_num(old_row[0]) # king 2
+        row[2] = 1 # canonical is always player White.
+        row[3] = old_row[4]
+        row[4] = old_row[3]
+        row[5] = -1 if old_row[5] == -1 else mirror_num(old_row[5])
+        row[6] = old_row[6]
+        row[7] = old_row[7]
 
-        # new_board = np.vstack((new_board, row))
+        new_board = np.vstack((new_board, row))
 
-        # new_board = -1*board[0:8,:]
+        new_board = -1*board[0:8,:]
 
-        # old_row = board[len(board)-1]
-        # row = np.zeros(old_row.shape, dtype=int)
+        old_row = board[len(board)-1]
+        row = np.zeros(old_row.shape, dtype=int)
 
-        # row[0] = old_row[1] # king 1
-        # row[1] = old_row[0] # king 2
-        # row[2] = 1 # canonical is always player White.
-        # row[3] = old_row[4]
-        # row[4] = old_row[3]
-        # row[5] = old_row[5]
-        # row[6] = old_row[6]
-        # row[7] = old_row[7]
+        row[0] = old_row[1] # king 1
+        row[1] = old_row[0] # king 2
+        row[2] = 1 # canonical is always player White.
+        row[3] = old_row[4]
+        row[4] = old_row[3]
+        row[5] = old_row[5]
+        row[6] = old_row[6]
+        row[7] = old_row[7]
 
-        # new_board = np.vstack((new_board, row))
+        new_board = np.vstack((new_board, row))
         # return state if player==1, else return -state if player==-1
-        # return new_board
-        return board 
+        return new_board
+        # return board 
 
     def getSymmetries(self, board, pi):
         '''Chess is not symmetrical'''
