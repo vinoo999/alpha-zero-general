@@ -46,8 +46,8 @@ class ChessGame(Game):
 
         if action == self.getActionSize()-1:
             game.turn = swap_color(game.turn)
-            board = np.array(game.get_board_mcts())
-            return (board, -player)
+            new_board = np.array(game.get_board_mcts())
+            return (new_board, -player)
 
         elif action < self.getActionSize() - 64*4 - 1:
             tmp = action // 64

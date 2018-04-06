@@ -798,6 +798,21 @@ class Board():
                     # print(move_obj)
                     break
 
+            if 'promotion' in move.keys():
+                print("PROMOTION")
+                print(move_obj)
+                print(ascii(self))
+                print(self.get_board_mcts())
+                print("Our Move: ", move)
+                print("ALL MOVES IN PROMOTION \n {}".format(moves))
+                
+                for i in range(len(moves)):
+                    print("From {}, To {}, Move: {}".format(algebraic(moves[i]['from']), algebraic(moves[i]['to']), moves[i]))
+                    if (move['from'] == algebraic(moves[i]['from']) and \
+                        move['to'] == algebraic(moves[i]['to'])):
+                        print("possible move", moves[i])
+                        # print(move_obj)
+
         # /* failed to find move */
         if (not move_obj):
             return None
