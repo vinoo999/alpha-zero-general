@@ -2,6 +2,7 @@ import math
 import numpy as np
 from chess.ChessUtil import decode_move, algebraic
 from chess.ChessGame import display
+import sys
 EPS = 1e-8
 
 class MCTS():
@@ -124,21 +125,28 @@ class MCTS():
         # print("ALL ACTIONS\n {} \n {}", list(np.where(valids==1))[0], testing)
         # print("BEST ACTION",a, decode_move(a))
         # print("Calling getNextState from MCTS")
-        try:
-            next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
+        # try:
+        next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
             # if next_s[8,6] > 40:
             #     print(next_s)
             # print(next_s)
-        except:
-            print("MAX RECURSION DEPTH")
-            display(canonicalBoard)
+        # except:
+        #     print("MAX RECURSION DEPTH")
+        #     display(canonicalBoard)
             # print(canonicalBoard)
         # print("NEXT S NEXT PLAYER\n", next_s, next_player)
         next_s = self.game.getCanonicalForm(next_s, next_player)
         # print("NEW CANONICAL\n", next_s)
 
         # print("move before search: \n", a, decode_move(a))
-        v = self.search(next_s)
+        try:
+            v = self.search(next_s)
+        except:
+            print("MAX RECURSION DEPTH")
+            display(next_s)
+            print(next_s)
+            print(np.where(self.game.getValidMoves(next_s, next_player)==1))
+            sys.exit()
 
         if (s,a) in self.Qsa:
             self.Qsa[(s,a)] = (self.Nsa[(s,a)]*self.Qsa[(s,a)] + v)/(self.Nsa[(s,a)]+1)
