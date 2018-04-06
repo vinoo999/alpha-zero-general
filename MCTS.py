@@ -69,8 +69,8 @@ class MCTS():
         Returns:
             v: the negative of the value of the current canonicalBoard
         """
-        print("STARTING SEARCH:")
-        display(canonicalBoard)
+        # print("STARTING SEARCH:")
+        # display(canonicalBoard)
         # print(algebraic(canonicalBoard[-1, 0]))
         s = self.game.stringRepresentation(canonicalBoard)
 
@@ -122,9 +122,9 @@ class MCTS():
         
         where = np.where(valids==1)
         testing = list(map(decode_move, list(np.where(valids==1))[0]))
-        print("ALL ACTIONS\n {} \n {}", list(np.where(valids==1))[0], testing)
-        print("BEST ACTION",a, decode_move(a))
-        print("Calling getNextState from MCTS")
+        # print("ALL ACTIONS\n {} \n {}", list(np.where(valids==1))[0], testing)
+        # print("BEST ACTION",a, decode_move(a))
+        # print("Calling getNextState from MCTS")
         # try:
         next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
             # if next_s[8,6] > 40:
@@ -139,18 +139,18 @@ class MCTS():
         # print("NEW CANONICAL\n", next_s)
 
         # print("move before search: \n", a, decode_move(a))
-        try:
-            v = self.search(next_s)
-        except:
-            print("MAX RECURSION DEPTH")
-            display(next_s)
-            print(next_s)
-            print("from canon")
-            display(canonicalBoard)
-            print(canonicalBoard)
-            print(np.where(self.game.getValidMoves(next_s, next_player)==1))
-            print(a, decode_move(a))
-            sys.exit()
+        # try:
+        v = self.search(next_s)
+        # except:
+        #     print("MAX RECURSION DEPTH")
+        #     display(next_s)
+        #     print(next_s)
+        #     print("from canon")
+        #     display(canonicalBoard)
+        #     print(canonicalBoard)
+        #     print(np.where(self.game.getValidMoves(next_s, next_player)==1))
+        #     print(a, decode_move(a))
+        #     sys.exit()
 
         if (s,a) in self.Qsa:
             self.Qsa[(s,a)] = (self.Nsa[(s,a)]*self.Qsa[(s,a)] + v)/(self.Nsa[(s,a)]+1)

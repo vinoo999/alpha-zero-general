@@ -83,10 +83,10 @@ class ChessGame(Game):
             pos2 = file2 + rank2
             move = {'from' : pos1, 'to' : pos2, 'promotion' : MCTS_DECODER[promotion]}
 
-            print("PROMOTION IN DO MOVE")
-            print(action)
-            print(direction)
-            print(move)
+            # print("PROMOTION IN DO MOVE")
+            # print(action)
+            # print(direction)
+            # print(move)
 
             game.do_move(move)
             next_board = np.array(game.get_board_mcts())
