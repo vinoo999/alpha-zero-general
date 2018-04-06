@@ -352,7 +352,7 @@ def decode_move(action):
         direction = tmp2%4
 
         player = 1 if tmp%2 == 0 else -1
-        file2 = 'abcdefgh'[(tmp//2) + (direction-1)*player]
+        file2 = 'abcdefgh'[(tmp//2) - (direction-1)*player]
 
         pos1 = file1 + rank1
         pos2 = file2 + rank2

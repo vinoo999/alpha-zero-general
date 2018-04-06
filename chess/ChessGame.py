@@ -75,7 +75,7 @@ class ChessGame(Game):
             tmp2 = action_offset % 16
             promotion = tmp2//4 + 2
             direction = tmp2%4
-            file2 = 'abcdefgh'[(tmp//2) + (direction-1)*player]
+            file2 = 'abcdefgh'[(tmp//2) - (direction-1)*player]
 
             pos1 = file1 + rank1
             pos2 = file2 + rank2
@@ -105,6 +105,8 @@ class ChessGame(Game):
             rank2_idx = '87654321'.index(rank2)
             
             if 'promotion' in move.keys():
+                print("PROMOTIONAL MOVE")
+                print(move)
                 promotion = MCTS_MAPPING[move['promotion']]-2 # move range to 0-3
                 offset = 64*64
                 direction = abs(move['from'] - move['to']) - 16 + 1
@@ -113,6 +115,7 @@ class ChessGame(Game):
                     # 2 means promote takes left
                 rank_abbrv = 0 if move['color'] == WHITE else 1
                 num = promotion*4 + direction + 16*(2*file1_idx + rank_abbrv) + offset
+                print(num)
             else:
                 num = (8*file1_idx + rank1_idx)*64 + 8*file2_idx + rank2_idx
 
