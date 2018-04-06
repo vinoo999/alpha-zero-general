@@ -1,4 +1,4 @@
-import math
+import math, sys
 import numpy as np
 from chess.ChessUtil import decode_move, algebraic
 from chess.ChessGame import display
@@ -117,6 +117,8 @@ class MCTS():
                     best_act = a
 
         a = best_act
+        print(a)
+        print(decode_move(a))
         # print("CURRENT CANONICAL\n", canonicalBoard)
         
         where = np.where(valids==1)
@@ -130,7 +132,13 @@ class MCTS():
         # print("NEW CANONICAL\n", next_s)
 
         # print("move before search: \n", a, decode_move(a))
-        v = self.search(next_s)
+        try:
+            v = self.search(next_s)
+        except:
+            display(canonicalBoard)
+            print(next_s)
+            sys.exit(1)
+
 
         if (s,a) in self.Qsa:
             self.Qsa[(s,a)] = (self.Nsa[(s,a)]*self.Qsa[(s,a)] + v)/(self.Nsa[(s,a)]+1)
