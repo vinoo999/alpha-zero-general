@@ -438,6 +438,9 @@ class Board():
         num_pieces = 0
         sq_color = 0
 
+        for key in ['p','b','n','r','q','k']:
+            pieces[key] = 0
+
         for i in range(SQUARES['a8'], SQUARES['h1']+1):
             sq_color = (sq_color + 1) % 2
             if (i & 0x88):

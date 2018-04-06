@@ -58,7 +58,7 @@ class Coach():
             action = np.random.choice(len(pi), p=pi)
             print("Calling get next state from coach: ")
             display(board)
-            print("Cur Player {} \n move {} i: {} ".format(self.curPlayer, decode_move(action), episodeStep))
+            print("Cur Player {} \n move {} i: {} half_move num: {} move_num: {}".format(self.curPlayer, decode_move(action), episodeStep, board[8,6], board[8,7]))
             board, self.curPlayer = self.game.getNextState(board, self.curPlayer, action)
 
             r = self.game.getGameEnded(board, self.curPlayer)

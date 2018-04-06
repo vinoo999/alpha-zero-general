@@ -129,7 +129,7 @@ class ChessGame(Game):
 
         if b.in_checkmate():
             return -1
-        if b.in_stalemate() or b.insufficient_material() or b.move_number > 50:
+        if b.in_stalemate() or b.insufficient_material() or b.half_moves >= 50 or b.move_number >= 400:
             return 1e-5
         b.turn = swap_color(b.turn)
         if b.in_checkmate():
@@ -139,25 +139,25 @@ class ChessGame(Game):
 
     def getCanonicalForm(self, board, player):
         
-        # if board[board.shape[0]-1][2] == 1: # WHITE
-        #     return board
+        if board[board.shape[0]-1][2] == 1: # WHITE
+            return board
 
-        # new_board = -1*board[0:8,:][::-1]
+        new_board = -1*board[0:8,:][::-1]
 
 
-        # old_row = board[len(board)-1]
-        # row = np.zeros(old_row.shape, dtype=int)
+        old_row = board[len(board)-1]
+        row = np.zeros(old_row.shape, dtype=int)
 
-        # row[0] = mirror_num(old_row[1]) # king 1
-        # row[1] = mirror_num(old_row[0]) # king 2
-        # row[2] = 1 # canonical is always player White.
-        # row[3] = old_row[4]
-        # row[4] = old_row[3]
-        # row[5] = -1 if old_row[5] == -1 else mirror_num(old_row[5])
-        # row[6] = old_row[6]
-        # row[7] = old_row[7]
+        row[0] = mirror_num(old_row[1]) # king 1
+        row[1] = mirror_num(old_row[0]) # king 2
+        row[2] = 1 # canonical is always player White.
+        row[3] = old_row[4]
+        row[4] = old_row[3]
+        row[5] = -1 if old_row[5] == -1 else mirror_num(old_row[5])
+        row[6] = old_row[6]
+        row[7] = old_row[7]
 
-        # new_board = np.vstack((new_board, row))
+        new_board = np.vstack((new_board, row))
 
         # new_board = -1*board[0:8,:]
 

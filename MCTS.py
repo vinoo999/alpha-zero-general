@@ -124,7 +124,15 @@ class MCTS():
         # print("ALL ACTIONS\n {} \n {}", list(np.where(valids==1))[0], testing)
         # print("BEST ACTION",a, decode_move(a))
         # print("Calling getNextState from MCTS")
-        next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
+        try:
+            next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
+            # if next_s[8,6] > 40:
+            #     print(next_s)
+            # print(next_s)
+        except:
+            print("MAX RECURSION DEPTH")
+            display(canonicalBoard)
+            # print(canonicalBoard)
         # print("NEXT S NEXT PLAYER\n", next_s, next_player)
         next_s = self.game.getCanonicalForm(next_s, next_player)
         # print("NEW CANONICAL\n", next_s)
