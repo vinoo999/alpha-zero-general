@@ -75,7 +75,9 @@ class ChessGame(Game):
             tmp2 = action_offset % 16
             promotion = tmp2//4 + 2
             direction = tmp2%4
-            file2 = 'abcdefgh'[(tmp//2) - (direction-1)*player]
+
+            tmp_player = 1 if tmp%2 == 0 else -1
+            file2 = 'abcdefgh'[(tmp//2) - (direction-1)*tmp_player]
 
             pos1 = file1 + rank1
             pos2 = file2 + rank2
