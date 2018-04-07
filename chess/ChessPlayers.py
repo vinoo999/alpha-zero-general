@@ -1,4 +1,7 @@
 import numpy as np
+from chess.ChessGame import display
+from .ChessUtil import *
+
 
 
 class RandomPlayer():
@@ -26,6 +29,7 @@ class HumanChessPlayer():
         
         #Grab human move and play it if valid
         while True:
+            display(board)
             print("Enter an action: [moveFrom moveTo promotion-if-applicable]\n")
             a = input()
 
@@ -33,28 +37,71 @@ class HumanChessPlayer():
 
             moveFrom, moveTo = a_split[0], a_split[1]
 
-            #b7-> b8
-
-            #check if the player entered a promotion out of [Knight: 'n', Bishop: 'b', Rook: 'r', Queen: 'q']
-            if len(a_split) == 3:
-                promotion = a_split[2]
-            else:
-                promotion = None
-
             
+            #Go from a human-readable action (a9->a8) to an action encoding
+                #moveFrom = algebraic(move['from'])
+                #moveTo = algebraic(move['to'])
+
+            print("moveFrom: " + str(moveFrom)) 
+
+            file1 = moveFrom[0]
+            rank1 = moveFrom[1]
+            file2 = moveTo[0]
+            rank2 = moveTo[1]
+
+            file1_idx = 'abcdefgh'.index(file1)
+            file2_idx = 'abcdefgh'.index(file2)
+            rank1_idx = '87654321'.index(rank1)
+            rank2_idx = '87654321'.index(rank2)
+            
+            print("file1: " + str(file1)) 
+            print("rank1: " + str(rank1))
+            print("file1_idx: " + str(file1_idx)) 
+            print("rank1_idx: " + str(rank1_idx)) 
+
+            #Check to see if a promotion is applicable [Knight: 'n', Bishop: 'b', Rook: 'r', Queen: 'q']
+            if len(a_split) == 3:
+                promotion = MCTS_MAPPING[move['promotion']]-2 # move range to 0-3
+                offset = 64*64
+                direction = abs(moveFrom[1] - moveTo[1]) + 1
+                    # 0 means promote takes right
+                    # 1 means advance
+                    # 2 means promote takes left
+                rank_abbrv = 0 if move['color'] == WHITE else 1
+                num = promotion*4 + direction + 16*(2*file1_idx + rank_abbrv) + offset
+            else:
+                num = (8*file1_idx + rank1_idx)*64 + 8*file2_idx + rank2_idx
 
 
-            action = self.game.n * 
-
-
-            x,y = [int(x) for x in a.split(' ')]
-            a = self.game.n * x + y if x!= -1 else self.game.n ** 2
-            if valid[a]:
+            if valid[num]:
                 break
             else:
                 print('Invalid')
 
-        return a
+
+
+
+
+        #     #Build the proper representation of the action
+        #     a = 
+
+
+
+        #     action = self.game.n * 
+
+
+        #     x,y = [int(x) for x in a.split(' ')]
+        #     a = self.game.n * x + y if x!= -1 else self.game.n ** 2
+        #     if valid[a]:
+        #         break
+        #     else:
+        #         print('Invalid')
+
+        # return a
+
+       # print("num: " + str(num))
+        # print(algebraic(num))
+        return num
 
 
 
