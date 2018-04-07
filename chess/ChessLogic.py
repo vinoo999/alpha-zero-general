@@ -776,7 +776,8 @@ class Board():
          *         promotion: 'q',
          *      })
          */'''
-
+        print("In DOMOVE()")
+        print(move)
         # // allow the user to specify the sloppy move parser to work around over
         # // disambiguation bugs in Fritz and Chessbase
         sloppy = options['sloppy'] if (isinstance(options,dict) and 'sloppy' in options.keys()) else False
@@ -785,6 +786,8 @@ class Board():
 
         if (isinstance(move, str)):
             move_obj = move_from_san(move, sloppy)
+            print("here:")
+            print(move_obj)
         elif (isinstance(move,dict)):
             moves = self.generate_moves()
 
@@ -796,6 +799,8 @@ class Board():
                     move['promotion'] == moves[i]['promotion'])):
                     move_obj = moves[i]
                     # print(move_obj)
+                    print("---now here:")
+                    print(move_obj)
                     break
 
             # if 'promotion' in move.keys():
