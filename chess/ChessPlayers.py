@@ -37,8 +37,14 @@ class HumanChessPlayer():
             a = input()
 
             a_split = a.split()
-            print("a_split: " + str(a_split)) 
+            print("a_split: " + str(a_split))
+
+            if len(a_split) < 2:
+                print("Improper move format. Enter again.")
+                continue
+
             moveFrom, moveTo = a_split[0], a_split[1]
+
 
             #Ensure the piece locations are properly formatted (i.e "a1")
             if len(moveFrom) != 2 or len(moveTo) != 2:
@@ -64,6 +70,11 @@ class HumanChessPlayer():
             rank1_idx = '87654321'.index(rank1)
             rank2_idx = '87654321'.index(rank2)
 
+            print("moveFrom:" + str(moveFrom) )
+            print("moveTo: " + str(moveTo))
+            print("file1_idx: " + str(file1_idx))
+            print("rank1_idx: " + str(rank1_idx))
+
 
             #Check to see if a promotion is applicable [Knight: 'n', Bishop: 'b', Rook: 'r', Queen: 'q']
             if len(a_split) == 3:
@@ -84,6 +95,8 @@ class HumanChessPlayer():
                 break
             else:
                 print('Invalid')
+
+        print(num)
 
         return num
 
