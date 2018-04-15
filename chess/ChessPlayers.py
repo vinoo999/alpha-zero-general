@@ -34,7 +34,7 @@ class HumanChessPlayer():
 
             display(board)
             print("Enter an action: [moveFrom moveTo promotion-if-applicable]\n")
-            a = input()
+            a = raw_input()
 
             a_split = a.split()
             print("a_split: " + str(a_split)) 
