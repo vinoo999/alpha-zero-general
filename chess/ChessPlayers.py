@@ -79,13 +79,15 @@ class HumanChessPlayer():
             #Check to see if a promotion is applicable [Knight: 'n', Bishop: 'b', Rook: 'r', Queen: 'q']
             if len(a_split) == 3:
                 promo_piece = a_split[2]
-                promotion = MCTS_MAPPING[promo_piece]-2 # move range to 0-3
+
+                #Map the promotion letter to a number
+                promotion = MCTS_MAPPING[promo_piece]-2
+
                 offset = 64*64
-                #direction = abs(int(moveFrom[1]) - int(moveTo[1])) + 1
+
+                #Map the moveFrom/MoveTo to ints and find the move direction. 0: promote takes right, 1: advance, 2: promote takes left
                 direction = abs(SQUARES[moveFrom] - SQUARES[moveTo]) - 16 + 1
-                    # 0 means promote takes right
-                    # 1 means advance
-                    # 2 means promote takes left
+
                 num = promotion*4 + direction + 16*(2*file1_idx + color) + offset
             else:
                 num = (8*file1_idx + rank1_idx)*64 + 8*file2_idx + rank2_idx
