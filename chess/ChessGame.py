@@ -37,7 +37,8 @@ class ChessGame(Game):
 
         # new_board = self.getCanonicalForm(board, player)
         # player = 1
-
+        #print("DISPLAY!!!!")
+        #display(board)
         game = Board(mcts_board=board)
         
         player_color = WHITE if player==1 else BLACK
@@ -46,8 +47,8 @@ class ChessGame(Game):
 
         if action == self.getActionSize()-1:
             game.turn = swap_color(game.turn)
-            new_board = np.array(game.get_board_mcts())
-            return (new_board, -player)
+            board = np.array(game.get_board_mcts())
+            return (board, -player)
 
         elif action < self.getActionSize() - 64*4 - 1:
             tmp = action // 64
@@ -75,18 +76,11 @@ class ChessGame(Game):
             tmp2 = action_offset % 16
             promotion = tmp2//4 + 2
             direction = tmp2%4
-
-            tmp_player = 1 if tmp%2 == 0 else -1
-            file2 = 'abcdefgh'[(tmp//2) - (direction-1)*tmp_player]
+            file2 = 'abcdefgh'[(tmp//2) + (direction-1)*player]
 
             pos1 = file1 + rank1
             pos2 = file2 + rank2
             move = {'from' : pos1, 'to' : pos2, 'promotion' : MCTS_DECODER[promotion]}
-
-            # print("PROMOTION IN DO MOVE")
-            # print(action)
-            # print(direction)
-            # print(move)
 
             game.do_move(move)
             next_board = np.array(game.get_board_mcts())
@@ -98,22 +92,35 @@ class ChessGame(Game):
         b = Board(mcts_board=board)
         legalMoves = b.generate_moves({'legal': True})
         for move in legalMoves:
+            #print("move:")
+            #print(move)
             pos1 = algebraic(move['from'])
             pos2 = algebraic(move['to'])
 
+
+            #print("pos1: " + str(pos1)) 
+            #print("move['from'] : "+ str(move['from']))
+
             file1 = pos1[0]
+            #print("file1: " + str(file1)) 
+
+
             rank1 = pos1[1]
+            #print("rank1: " + str(rank1)) 
+
             file2 = pos2[0]
             rank2 = pos2[1]
 
             file1_idx = 'abcdefgh'.index(file1)
+            #print("file1_idx: " + str(file1_idx)) 
+
             file2_idx = 'abcdefgh'.index(file2)
             rank1_idx = '87654321'.index(rank1)
+            #print("rank1_idx: " + str(rank1_idx)) 
+
             rank2_idx = '87654321'.index(rank2)
             
             if 'promotion' in move.keys():
-                # print("PROMOTIONAL MOVE")
-                # print(move)
                 promotion = MCTS_MAPPING[move['promotion']]-2 # move range to 0-3
                 offset = 64*64
                 direction = abs(move['from'] - move['to']) - 16 + 1
@@ -122,8 +129,6 @@ class ChessGame(Game):
                     # 2 means promote takes left
                 rank_abbrv = 0 if move['color'] == WHITE else 1
                 num = promotion*4 + direction + 16*(2*file1_idx + rank_abbrv) + offset
-                # print(direction)
-                # print(num)
             else:
                 num = (8*file1_idx + rank1_idx)*64 + 8*file2_idx + rank2_idx
 
@@ -140,7 +145,7 @@ class ChessGame(Game):
 
         if b.in_checkmate():
             return -1
-        if b.in_stalemate() or b.insufficient_material() or b.half_moves >= 50:
+        if b.in_stalemate() or b.insufficient_material() or b.move_number > 50:
             return 1e-5
         b.turn = swap_color(b.turn)
         if b.in_checkmate():
@@ -187,8 +192,7 @@ class ChessGame(Game):
         # new_board = np.vstack((new_board, row))
         # return state if player==1, else return -state if player==-1
         # return new_board
-        new_board = copy.deepcopy(board)
-        return new_board 
+        return board 
 
     def getSymmetries(self, board, pi):
         '''Chess is not symmetrical'''

@@ -56,17 +56,17 @@ class Coach():
                 trainExamples.append([b, self.curPlayer, p, None])
 
             action = np.random.choice(len(pi), p=pi)
-            print("Calling get next state from coach: ")
-            display(board)
-            print("Cur Player {} \n move {} i: {} half_move num: {} move_num: {}".format(self.curPlayer, decode_move(action), episodeStep, board[8,6], board[8,7]))
+            #print("Calling get next state from coach: ")
+            #display(board)
+            #print("Cur Player {} \n move {} i: {} half_move num: {} move_num: {}".format(self.curPlayer, decode_move(action), episodeStep, board[8,6], board[8,7]))
             board, self.curPlayer = self.game.getNextState(board, self.curPlayer, action)
 
             r = self.game.getGameEnded(board, self.curPlayer)
 
             if r!=0:
-                print("GAME OVER")
-                display(board)
-                print(board)
+                #print("GAME OVER")
+                #display(board)
+                #print(board)
                 return [(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples]
 
     def learn(self):
@@ -96,7 +96,7 @@ class Coach():
                     # bookkeeping + plot progress
                     eps_time.update(time.time() - end)
                     end = time.time()
-                    bar.suffix  = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(eps=eps+1, maxeps=self.args.numEps, et=eps_time.avg,
+                    bar.suffix  = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}\r'.format(eps=eps+1, maxeps=self.args.numEps, et=eps_time.avg,
                                                                                                                total=bar.elapsed_td, eta=bar.eta_td)
                     bar.next()
                 bar.finish()
