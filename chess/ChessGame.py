@@ -37,8 +37,8 @@ class ChessGame(Game):
 
         # new_board = self.getCanonicalForm(board, player)
         # player = 1
-        print("DISPLAY!!!!")
-        display(board)
+        #print("DISPLAY!!!!")
+        #display(board)
         game = Board(mcts_board=board)
         
         player_color = WHITE if player==1 else BLACK

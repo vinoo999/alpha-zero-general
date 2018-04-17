@@ -4,8 +4,7 @@ from chess.ChessUtil import *
 from chess.ChessConstants import *
 
 import numpy as np
-from Queue import Queue
-
+from queue import Queue
 
 class RandomPlayer():
     def __init__(self, game):
@@ -65,8 +64,8 @@ class HumanChessPlayer():
         while True:
             color = 0 if board[8,2] == 1 else 1
 
-            display(board)
-            print("Enter an action: [moveFrom moveTo promotion-if-applicable]\n")
+            #display(board)
+            #print("Enter an action: [moveFrom moveTo promotion-if-applicable]\n")
 
             # Old Method: just get input from user
             #a = raw_input()
@@ -74,9 +73,8 @@ class HumanChessPlayer():
             # New Method: wait until user makes move on GUI (aka. browser)
             a = self.queue.get()
 
-
             a_split = a.split()
-            print("a_split: " + str(a_split)) 
+            #print("a_split: " + str(a_split)) 
             moveFrom, moveTo = a_split[0], a_split[1]
 
             #Ensure the piece locations are properly formatted (i.e "a1")

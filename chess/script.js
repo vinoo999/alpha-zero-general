@@ -1,4 +1,14 @@
 var board, game = new Chess();
+var sess_id;
+
+/* Shorthand for onready; create a new game session */
+$( function() {
+    var url = location.protocol + "//" + location.hostname + ":" + location.port + "/new_game";
+    $.get(url, (id) => {
+        /* Request handler */
+        sess_id = id
+    });
+});
 
 /* board visualization and games state handling */
 
@@ -10,13 +20,14 @@ var onDragStart = function (source, piece, position, orientation) {
 };
 
 var makeBestMove = function () {
-    // Get a random move
-    // var moves = game.ugly_moves();
-    // var move = moves[Math.floor(Math.random() * moves.length)];
+
+    /* When ready to apply computer's move, request it from flask server */
 
     // Build GET request
     var url = location.protocol + "//" + location.hostname + ":" + location.port + "/get_move";
-    $.get(url, (move) => {
+    var data = { "sess_id": sess_id };
+    var success = (move) => {
+        /* Request handler */
         move = JSON.parse(move);
         game.ugly_move(move);
         board.position(game.fen());
@@ -24,29 +35,15 @@ var makeBestMove = function () {
         if (game.game_over()) {
             alert('Game over');
         }
+    };
+
+    // Send request to flask server 
+    $.ajax({
+        type: "GET",
+        url: url,
+        data: data,
+        success: success
     });
-};
-
-
-var positionCount;
-var getBestMove = function (game) {
-    if (game.game_over()) {
-        alert('Game over');
-    }
-
-    positionCount = 0;
-    var depth = parseInt($('#search-depth').find(':selected').text());
-
-    var d = new Date().getTime();
-    var bestMove = minimaxRoot(depth, game, true);
-    var d2 = new Date().getTime();
-    var moveTime = (d2 - d);
-    var positionsPerS = ( positionCount * 1000 / moveTime);
-
-    $('#position-count').text(positionCount);
-    $('#time').text(moveTime/1000 + 's');
-    $('#positions-per-s').text(positionsPerS);
-    return bestMove;
 };
 
 var renderMoveHistory = function (moves) {
@@ -60,16 +57,17 @@ var renderMoveHistory = function (moves) {
 };
 
 var onDrop = function (source, target) {
-
     var move = game.move({
         from: source,
         to: target,
         promotion: 'q'
     });
 
+    /* On player move, send move to server */
+
     // Build POST request
     var url = location.protocol + "//" + location.hostname + ":" + location.port + "/make_move";
-    var data = { "move": source + " " + target };
+    var data = { "move": source + " " + target, "sess_id": sess_id };
     var success = (res) => {
         if (res == "OK") {
             removeGreySquares();
@@ -82,6 +80,7 @@ var onDrop = function (source, target) {
         }
     }
 
+    // Send request to flask server 
     $.ajax({
         type: "POST",
         url: url,
