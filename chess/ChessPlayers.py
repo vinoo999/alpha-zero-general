@@ -1,4 +1,6 @@
 import numpy as np
+from chess.ChessGame import display
+from chess.ChessConstants import *
 
 
 class RandomPlayer():
@@ -13,27 +15,53 @@ class RandomPlayer():
         return a
 
 
-class HumanOthelloPlayer():
+class HumanChessPlayer():
     def __init__(self, game):
         self.game = game
 
     def play(self, board):
         # display(board)
+        color = 0 if board[8,2] == 1 else 1
         valid = self.game.getValidMoves(board, 1)
-        for i in range(len(valid)):
-            if valid[i]:
-                print(int(i/self.game.n), int(i%self.game.n))
+        # for i in range(len(valid)):
+        #     if valid[i]:
+        #         print(int(i/self.game.n), int(i%self.game.n))
         while True:
-            a = input()
+            a = input("Enter move in the following format: from to [promotion]\n")
 
-            x,y = [int(x) for x in a.split(' ')]
-            a = self.game.n * x + y if x!= -1 else self.game.n ** 2
-            if valid[a]:
+            splits = a.split(' ')
+            if len(splits) >= 2:
+                pos1 = splits[0]
+                pos2 = splits[1]
+
+                file1 = pos1[0]
+                rank1 = pos1[1]
+                file2 = pos2[0]
+                rank2 = pos2[1]
+
+                file1_idx = 'abcdefgh'.index(file1)
+                file2_idx = 'abcdefgh'.index(file2)
+                rank1_idx = '87654321'.index(rank1)
+                rank2_idx = '87654321'.index(rank2)
+            
+                if len(splits) == 3:
+                    promotion = MCTS_MAPPING[splits[2]]-2 # move range to 0-3
+                    offset = 64*64
+                    direction = abs(SQUARES[pos1] - SQUARES[pos2]) - 16 + 1
+                        # 0 means promote takes right
+                        # 1 means advance
+                        # 2 means promote takes left
+                    num = promotion*4 + direction + 16*(2*file1_idx + color) + offset
+
+                else:
+                    num = (8*file1_idx + rank1_idx)*64 + 8*file2_idx + rank2_idx
+
+            if valid[num]:
                 break
             else:
                 print('Invalid')
 
-        return a
+        return num
 
 
 class GreedyOthelloPlayer():
