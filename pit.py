@@ -28,7 +28,7 @@ class GameWrapper():
 
     def arena_hook(self):
         arena = Arena.Arena(self.hp, self.rp, self.g, display=display)
-        arena.playGames(2)
+        arena.playGames(2, verbose=True)
 
 
 # Dictionary of all the games, key is sess_id, value is GameWrapper class
@@ -45,7 +45,7 @@ def new_game():
     """
 
     # Generate a random session id
-    sess_id = "".join(random.choices(string.ascii_letters + string.digits, k=16))
+    sess_id = "".join(random.choice(string.ascii_letters + string.digits) for _ in range(16))
 
     # Initialize a new game
     new_game = GameWrapper(sess_id)
@@ -75,7 +75,7 @@ def serve_static(path):
     return send_from_directory('chess', path)
 
 def web_server_hook():
-    app.run()
+    app.run(host='0.0.0.0')
 
 
 def main():
