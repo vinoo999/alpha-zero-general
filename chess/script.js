@@ -93,6 +93,10 @@ var onDrop = function (source, target, piece) {
 
         $("#promotion").change(() => {
             selected_piece = $("#promotion").val();
+            if (selected_piece == "invalid") {
+                return;
+            }
+
             var move = game.move({
                 from: source,
                 to: target,
