@@ -91,7 +91,7 @@ var onDrop = function (source, target, piece) {
         // Show promotion modal
         $(".center-wrapper").show();
 
-        $("#promotion").change(() => {
+        var handler = function () {
             selected_piece = $("#promotion").val();
             if (selected_piece == "invalid") {
                 return;
@@ -110,7 +110,9 @@ var onDrop = function (source, target, piece) {
             /* Add promotion to move data */
             data["move"] = source + " " + target + " " + selected_piece;
             return sendMove(move, data);
-        });
+        };
+
+        $("#promotion").change(handler);
     } 
     else {
         /* Normal move */
