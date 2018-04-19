@@ -18,10 +18,10 @@ any agent.
 
 class GameWrapper():
     def __init__(self, sess_id):
-        self.g  = ChessGame()              # Initialize chess game
-        self.r  = RandomPlayer(self.g)     # Initialize random player
+        self.g  = ChessGame()                     # Initialize chess game
+        self.r  = RandomNetworkPlayer(self.g)     # Initialize random player
         self.rp = self.r.play
-        self.h  = HumanChessPlayer(self.g) # Initialize human player
+        self.h  = HumanNetworkChessPlayer(self.g) # Initialize human player
         self.hp = self.h.play
 
         self.sess_id = sess_id
