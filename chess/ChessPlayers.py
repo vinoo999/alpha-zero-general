@@ -16,6 +16,16 @@ class RandomPlayer():
             a = np.random.randint(self.game.getActionSize())
         return a
 
+
+class AlphaBetaPlayer():
+    def __init__(self, game):
+        self.game = game
+
+
+
+
+
+
 class HumanChessPlayer():
     def __init__(self, game):
         self.game = game
@@ -82,17 +92,27 @@ class HumanChessPlayer():
 
                 #Map the promotion letter to a number
                 promotion = MCTS_MAPPING[promo_piece]-2
-
+                print("promotion")
                 offset = 64*64
 
                 #Map the moveFrom/MoveTo to ints and find the move direction. 0: promote takes right, 1: advance, 2: promote takes left
                 direction = abs(SQUARES[moveFrom] - SQUARES[moveTo]) - 16 + 1
+                print("Direction is: " + str(direction))
 
                 num = promotion*4 + direction + 16*(2*file1_idx + color) + offset
             else:
                 num = (8*file1_idx + rank1_idx)*64 + 8*file2_idx + rank2_idx
 
+                print("Valid set is: ")
+                print("len valid: " + str(len(valid)))
+                
+                print(valid)
+                print("valid indices: ")
+                print(a)
+                print([i for i, e in enumerate(valid) if e != 0])
 
+
+                print("end here-------------")
             if valid[num]:
                 break
             else:
