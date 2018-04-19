@@ -80,9 +80,6 @@ var sendMove = function (move, data) {
     });
 }
 
-// var global_src;
-// var global_dest;
-
 var onDrop = function (source, target, piece) {
 
     /* On player move, send move to server */
