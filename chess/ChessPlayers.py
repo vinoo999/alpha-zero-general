@@ -19,6 +19,21 @@ class AlphaBetaPlayer():
     def __init__(self, game):
         self.game = game
 
+    def play(self, board):
+
+        
+        color = 0 if board[8,2] == 1 else 1
+        valid = self.game.getValidMoves(board, 1)
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -58,13 +73,6 @@ class HumanChessPlayer():
             if len(splits) == 3 and splits[2] not in ['n', 'b', 'r', 'q']:
                 print("Improper promotion format. Enter again.")
                 continue
-
-
-
-
-
-
-
 
             if len(splits) >= 2:
                 pos1 = splits[0]
