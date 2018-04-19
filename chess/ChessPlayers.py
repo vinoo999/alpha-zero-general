@@ -30,6 +30,7 @@ class RandomNetworkPlayer():
         self.queue = Queue(maxsize=1)
 
     def play(self, board):
+
         # Pulled from getValidMoves(), we need the dictionary encoding of the move for the GUI
         b = Board(mcts_board=board)
         legalMoves = b.generate_moves({'legal': True})
@@ -140,12 +141,8 @@ class HumanNetworkChessPlayer():
         self.queue = Queue(maxsize=1)
 
     def play(self, board):
-        # display(board)
-        #Collect valid moves for this position
+
         valid = self.game.getValidMoves(board, 1)
-        #for i in range(len(valid)):
-        #    if valid[i]:
-                #print(int(i/self.game.n), int(i%self.game.n))
         
         #Grab human move and play it if valid
         while True:
