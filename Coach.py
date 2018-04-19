@@ -46,27 +46,20 @@ class Coach():
 
         while True:
             episodeStep += 1
-            # print("BOARD IN COACH: \n", board, self.curPlayer)
             canonicalBoard = self.game.getCanonicalForm(board,self.curPlayer)
             temp = int(episodeStep < self.args.tempThreshold)
-            # print("CANONICAL BOARD IN COACH: \n", canonicalBoard)
             pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
             sym = self.game.getSymmetries(canonicalBoard, pi)
             for b,p in sym:
                 trainExamples.append([b, self.curPlayer, p, None])
 
             action = np.random.choice(len(pi), p=pi)
-            #print("Calling get next state from coach: ")
-            #display(board)
-            #print("Cur Player {} \n move {} i: {} half_move num: {} move_num: {}".format(self.curPlayer, decode_move(action), episodeStep, board[8,6], board[8,7]))
+            
             board, self.curPlayer = self.game.getNextState(board, self.curPlayer, action)
 
             r = self.game.getGameEnded(board, self.curPlayer)
 
             if r!=0:
-                #print("GAME OVER")
-                #display(board)
-                #print(board)
                 return [(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples]
 
     def learn(self):

@@ -32,17 +32,9 @@ class ChessGame(Game):
     def getNextState(self, board, player, action):
         # if player takes action on board, return next (board,player)
         # action must be a valid move
-        # print("Board input to getNExtState \n")
-        # display(board)
-
-        # new_board = self.getCanonicalForm(board, player)
-        # player = 1
-
         game = Board(mcts_board=board)
         
         player_color = WHITE if player==1 else BLACK
-        # if game.turn != player_color:
-        #     return (None, None)
 
         if action == self.getActionSize()-1:
             game.turn = swap_color(game.turn)
@@ -83,11 +75,6 @@ class ChessGame(Game):
             pos2 = file2 + rank2
             move = {'from' : pos1, 'to' : pos2, 'promotion' : MCTS_DECODER[promotion]}
 
-            # print("PROMOTION IN DO MOVE")
-            # print(action)
-            # print(direction)
-            # print(move)
-
             game.do_move(move)
             next_board = np.array(game.get_board_mcts())
             return (next_board, -player)
@@ -112,8 +99,6 @@ class ChessGame(Game):
             rank2_idx = '87654321'.index(rank2)
             
             if 'promotion' in move.keys():
-                # print("PROMOTIONAL MOVE")
-                # print(move)
                 promotion = MCTS_MAPPING[move['promotion']]-2 # move range to 0-3
                 offset = 64*64
                 direction = abs(move['from'] - move['to']) - 16 + 1
@@ -122,8 +107,6 @@ class ChessGame(Game):
                     # 2 means promote takes left
                 rank_abbrv = 0 if move['color'] == WHITE else 1
                 num = promotion*4 + direction + 16*(2*file1_idx + rank_abbrv) + offset
-                # print(direction)
-                # print(num)
             else:
                 num = (8*file1_idx + rank1_idx)*64 + 8*file2_idx + rank2_idx
 
@@ -133,15 +116,12 @@ class ChessGame(Game):
         return np.array(valids)
 
     def getGameEnded(self, board, player):
-        # return 0 if not ended, 1 if player 1 won, -1 if player 1 lost
-        # player = 1
         b = Board(mcts_board=board)
-        # b.turn = WHITE if player == 1 else BLACK
 
         if b.in_checkmate():
             return -1
         if b.in_stalemate() or b.insufficient_material() or b.half_moves >= 50:
-            return 1e-5
+            return -1e-5
         b.turn = swap_color(b.turn)
         if b.in_checkmate():
             return 1
@@ -149,44 +129,6 @@ class ChessGame(Game):
         return 0
 
     def getCanonicalForm(self, board, player):
-        
-        # if board[board.shape[0]-1][2] == 1: # WHITE
-        #     return board
-
-        # new_board = -1*board[0:8,:][::-1]
-
-
-        # old_row = board[len(board)-1]
-        # row = np.zeros(old_row.shape, dtype=int)
-
-        # row[0] = mirror_num(old_row[1]) # king 1
-        # row[1] = mirror_num(old_row[0]) # king 2
-        # row[2] = 1 # canonical is always player White.
-        # row[3] = old_row[4]
-        # row[4] = old_row[3]
-        # row[5] = -1 if old_row[5] == -1 else mirror_num(old_row[5])
-        # row[6] = old_row[6]
-        # row[7] = old_row[7]
-
-        # new_board = np.vstack((new_board, row))
-
-        # new_board = -1*board[0:8,:]
-
-        # old_row = board[len(board)-1]
-        # row = np.zeros(old_row.shape, dtype=int)
-
-        # row[0] = old_row[1] # king 1
-        # row[1] = old_row[0] # king 2
-        # row[2] = 1 # canonical is always player White.
-        # row[3] = old_row[4]
-        # row[4] = old_row[3]
-        # row[5] = old_row[5]
-        # row[6] = old_row[6]
-        # row[7] = old_row[7]
-
-        # new_board = np.vstack((new_board, row))
-        # return state if player==1, else return -state if player==-1
-        # return new_board
         new_board = copy.deepcopy(board)
         return new_board 
 

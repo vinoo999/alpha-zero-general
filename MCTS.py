@@ -31,13 +31,10 @@ class MCTS():
             probs: a policy vector where the probability of the ith action is
                    proportional to Nsa[(s,a)]**(1./temp)
         """
-        # print("GET ACTION PROB CALLED")
         for i in range(self.args.numMCTSSims):
-            # print("SEARCH FROM GETACTIONPROB: (nummctssims size) ", self.args.numMCTSSims, i)
             self.search(canonicalBoard)
 
         s = self.game.stringRepresentation(canonicalBoard)
-        # print(canonicalBoard)
         counts = [self.Nsa[(s,a)] if (s,a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
         if temp==0:
             bestA = np.argmax(counts)
@@ -69,9 +66,6 @@ class MCTS():
         Returns:
             v: the negative of the value of the current canonicalBoard
         """
-        # print("STARTING SEARCH:")
-        # display(canonicalBoard)
-        # print(algebraic(canonicalBoard[-1, 0]))
         s = self.game.stringRepresentation(canonicalBoard)
 
         if s not in self.Es:
@@ -118,39 +112,12 @@ class MCTS():
                     best_act = a
 
         a = best_act
-        # print("CURRENT CANONICAL\n", canonicalBoard)
         
         where = np.where(valids==1)
         testing = list(map(decode_move, list(np.where(valids==1))[0]))
-        # print("ALL ACTIONS\n {} \n {}", list(np.where(valids==1))[0], testing)
-        # print("BEST ACTION",a, decode_move(a))
-        # print("Calling getNextState from MCTS")
-        # try:
         next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
-            # if next_s[8,6] > 40:
-            #     print(next_s)
-            # print(next_s)
-        # except:
-        #     print("MAX RECURSION DEPTH")
-        #     display(canonicalBoard)
-            # print(canonicalBoard)
-        # print("NEXT S NEXT PLAYER\n", next_s, next_player)
         next_s = self.game.getCanonicalForm(next_s, next_player)
-        # print("NEW CANONICAL\n", next_s)
-
-        # print("move before search: \n", a, decode_move(a))
-        # try:
         v = self.search(next_s)
-        # except:
-        #     print("MAX RECURSION DEPTH")
-        #     display(next_s)
-        #     print(next_s)
-        #     print("from canon")
-        #     display(canonicalBoard)
-        #     print(canonicalBoard)
-        #     print(np.where(self.game.getValidMoves(next_s, next_player)==1))
-        #     print(a, decode_move(a))
-        #     sys.exit()
 
         if (s,a) in self.Qsa:
             self.Qsa[(s,a)] = (self.Nsa[(s,a)]*self.Qsa[(s,a)] + v)/(self.Nsa[(s,a)]+1)
