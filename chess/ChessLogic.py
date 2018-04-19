@@ -776,8 +776,8 @@ class Board():
          *         promotion: 'q',
          *      })
          */'''
-        print("In the do_move function.")
-        print("The move is: " + str(move))
+        #print("In the do_move function.")
+        #print("The move is: " + str(move))
         # // allow the user to specify the sloppy move parser to work around over
         # // disambiguation bugs in Fritz and Chessbase
         sloppy = options['sloppy'] if (isinstance(options,dict) and 'sloppy' in options.keys()) else False
@@ -786,8 +786,7 @@ class Board():
 
         if (isinstance(move, str)):
             move_obj = move_from_san(move, sloppy)
-            print(" Move type string and move object is: " +str(move_obj))
-        
+            #print(" Move type string and move object is: " +str(move_obj))
         elif (isinstance(move,dict)):
             moves = self.generate_moves()
 
@@ -799,7 +798,7 @@ class Board():
                     move['promotion'] == moves[i]['promotion'])):
                     move_obj = moves[i]
                     # print(move_obj)
-                    print("Move type dict and move object is: " +str(move_obj))
+                    #print("Move type dict and move object is: " +str(move_obj))
                     break
 
             # if 'promotion' in move.keys():
