@@ -3,6 +3,7 @@ import numpy as np
 from chess.ChessUtil import decode_move, algebraic
 from chess.ChessGame import display
 import sys
+import copy
 EPS = 1e-8
 
 class MCTS():
@@ -32,7 +33,9 @@ class MCTS():
                    proportional to Nsa[(s,a)]**(1./temp)
         """
         for i in range(self.args.numMCTSSims):
+            tmp_game = copy.deepcopy(self.game)
             self.search(canonicalBoard)
+            self.game = tmp_game
 
         s = self.game.stringRepresentation(canonicalBoard)
         counts = [self.Nsa[(s,a)] if (s,a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
