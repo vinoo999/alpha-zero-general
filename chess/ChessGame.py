@@ -7,15 +7,18 @@ sys.path.append('..')
 from Game import Game
 import numpy as np
 import copy
+from collections import defaultdict
 
 
 class ChessGame(Game):
     def __init__(self):
         self.n = 8
+        self.state_counts = defaultdict(int)
 
     def getInitBoard(self):
         # return initial board (numpy board)
         game = Board()
+        self.state_counts = defaultdict(int)
         return np.array(game.get_board_mcts())
 
     def getBoardSize(self):
@@ -38,8 +41,12 @@ class ChessGame(Game):
 
         if action == self.getActionSize()-1:
             game.turn = swap_color(game.turn)
-            new_board = np.array(game.get_board_mcts())
-            return (new_board, -player)
+            next_board = np.array(game.get_board_mcts())
+            no_move_board = np.copy(next_board)
+            no_move_board[8,6] = 0
+            no_move_board[8,7] = 0
+            self.state_counts[self.stringRepresentation(no_move_board)] += 1
+            return (next_board, -player)
 
         elif action < self.getActionSize() - 64*4 - 1:
             tmp = action // 64
@@ -54,7 +61,10 @@ class ChessGame(Game):
             move = {'from' : pos1, 'to' : pos2}
             game.do_move(move)
             next_board = np.array(game.get_board_mcts())
-
+            no_move_board = np.copy(next_board)
+            no_move_board[8,6] = 0
+            no_move_board[8,7] = 0
+            self.state_counts[self.stringRepresentation(no_move_board)] += 1
             return (next_board, -player)
 
         else:
@@ -77,6 +87,10 @@ class ChessGame(Game):
 
             game.do_move(move)
             next_board = np.array(game.get_board_mcts())
+            no_move_board = np.copy(next_board)
+            no_move_board[8,6] = 0
+            no_move_board[8,7] = 0
+            self.state_counts[self.stringRepresentation(no_move_board)] += 1
             return (next_board, -player)
 
     def getValidMoves(self, board, player):
@@ -118,9 +132,16 @@ class ChessGame(Game):
     def getGameEnded(self, board, player):
         b = Board(mcts_board=board)
 
+
+        no_move_board = np.copy(board)
+        no_move_board[8,6] = 0
+        no_move_board[8,7] = 0
+        str_rep_no_move = self.stringRepresentation(no_move_board)
+
+        # print("Num count: ", self.state_counts[str_rep_no_move])
         if b.in_checkmate():
             return -1
-        if b.in_stalemate() or b.insufficient_material() or b.half_moves >= 50:
+        if b.in_stalemate() or b.insufficient_material() or b.half_moves >= 50 or self.state_counts[str_rep_no_move] >= 3:
             return -1e-5
         b.turn = swap_color(b.turn)
         if b.in_checkmate():
@@ -137,7 +158,7 @@ class ChessGame(Game):
         return [(board,pi)]
 
     def stringRepresentation(self, board):
-        # 8x8 numpy array (canonical board)
+        # 9x8 numpy array (canonical board)
         return board.tostring()
 
     def getScore(self, board, player):
