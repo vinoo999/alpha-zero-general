@@ -80,6 +80,9 @@ var sendMove = function (move, data) {
     });
 }
 
+// var global_src;
+// var global_dest;
+
 var onDrop = function (source, target, piece) {
 
     /* On player move, send move to server */
@@ -91,15 +94,22 @@ var onDrop = function (source, target, piece) {
         // Show promotion modal
         $(".center-wrapper").show();
 
-        var handler = function () {
+        // Set source and target data to parent closure so we can reference 
+        // it dynamically from within the event handler
+        this.source = source;
+        this.target = target;
+        var self = this;
+
+        /* Wait until user selects their desired promotion piece */
+        $("#promotion").on("change", function promotionEvent() {
             selected_piece = $("#promotion").val();
             if (selected_piece == "invalid") {
                 return;
             }
 
             var move = game.move({
-                from: source,
-                to: target,
+                from: self.source,
+                to: self.target,
                 promotion: selected_piece
             });
 
@@ -108,11 +118,9 @@ var onDrop = function (source, target, piece) {
             $("#promotion").prop("selectedIndex", 0);
 
             /* Add promotion to move data */
-            data["move"] = source + " " + target + " " + selected_piece;
+            data["move"] = self.source + " " + self.target + " " + selected_piece;
             return sendMove(move, data);
-        };
-
-        $("#promotion").change(handler);
+        });
     } 
     else {
         /* Normal move */
