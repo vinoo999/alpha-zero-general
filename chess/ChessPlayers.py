@@ -7,6 +7,11 @@ import numpy as np
 from queue import Queue
 
 
+class AlphaBetaPlayer():
+    def __init__(self, game):
+        self.game = game
+
+
 class RandomPlayer():
     def __init__(self, game):
         self.game = game
@@ -72,9 +77,28 @@ class HumanChessPlayer():
         #     if valid[i]:
         #         print(int(i/self.game.n), int(i%self.game.n))
         while True:
+
             a = input("Enter move in the following format: from to [promotion]\n")
 
             splits = a.split(' ')
+
+            if len(splits) < 2:
+                print("Improper move format. Enter again.")
+                continue
+
+            moveFrom, moveTo = splits[0], splits[1]
+
+
+            #Ensure the piece locations are properly formatted (i.e "a1")
+            if len(moveFrom) != 2 or len(moveTo) != 2:
+                print("Improper position format. Enter again.")
+                continue
+
+            #Ensure the promotion piece is valid
+            if len(splits) == 3 and splits[2] not in ['n', 'b', 'r', 'q']:
+                print("Improper promotion format. Enter again.")
+                continue
+
             if len(splits) >= 2:
                 pos1 = splits[0]
                 pos2 = splits[1]
@@ -101,6 +125,7 @@ class HumanChessPlayer():
                 else:
                     num = (8*file1_idx + rank1_idx)*64 + 8*file2_idx + rank2_idx
 
+                print("end here-------------")
             if valid[num]:
                 break
             else:
@@ -125,12 +150,6 @@ class HumanNetworkChessPlayer():
         #Grab human move and play it if valid
         while True:
             color = 0 if board[8,2] == 1 else 1
-
-            #display(board)
-            #print("Enter an action: [moveFrom moveTo promotion-if-applicable]\n")
-
-            # Old Method: just get input from user
-            #a = raw_input()
 
             # New Method: wait until user makes move on GUI (aka. browser)
             a = self.queue.get()
@@ -159,7 +178,6 @@ class HumanNetworkChessPlayer():
             file2_idx = 'abcdefgh'.index(file2)
             rank1_idx = '87654321'.index(rank1)
             rank2_idx = '87654321'.index(rank2)
-
 
             #Check to see if a promotion is applicable [Knight: 'n', Bishop: 'b', Rook: 'r', Queen: 'q']
             if len(a_split) == 3:
