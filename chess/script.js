@@ -56,7 +56,7 @@ var renderMoveHistory = function (moves) {
 
 };
 
-var onDrop = function (source, target) {
+var onDrop = function (source, target, piece) {
     var move = game.move({
         from: source,
         to: target,
