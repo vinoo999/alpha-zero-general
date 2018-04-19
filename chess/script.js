@@ -56,18 +56,9 @@ var renderMoveHistory = function (moves) {
 
 };
 
-var onDrop = function (source, target, piece) {
-    var move = game.move({
-        from: source,
-        to: target,
-        promotion: 'q'
-    });
-
-    /* On player move, send move to server */
-
+var sendMove = function (move, data) {
     // Build POST request
     var url = location.protocol + "//" + location.hostname + ":" + location.port + "/make_move";
-    var data = { "move": source + " " + target, "sess_id": sess_id };
     var success = (res) => {
         if (res == "OK") {
             removeGreySquares();
@@ -87,6 +78,46 @@ var onDrop = function (source, target, piece) {
         data: data,
         success: success
     });
+}
+
+var onDrop = function (source, target, piece) {
+
+    /* On player move, send move to server */
+    var data = { "sess_id": sess_id };
+
+    if (target.charAt(1) == "8" && piece.charAt(1) == "P") {
+        /* Handle a promotion */
+
+        // Show promotion modal
+        $(".center-wrapper").show();
+
+        $("#promotion").change(() => {
+            selected_piece = $("#promotion").val();
+            var move = game.move({
+                from: source,
+                to: target,
+                promotion: selected_piece
+            });
+
+            /* Reset modal */
+            $(".center-wrapper").hide();
+            $("#promotion").prop("selectedIndex", 0);
+
+            /* Add promotion to move data */
+            data["move"] = source + " " + target + " " + selected_piece;
+            return sendMove(move, data);
+        });
+    } 
+    else {
+        /* Normal move */
+        var move = game.move({
+            from: source,
+            to: target
+        });
+
+        data["move"] = source + " " + target;
+        return sendMove(move, data);
+    }
 };
 
 var onSnapEnd = function () {

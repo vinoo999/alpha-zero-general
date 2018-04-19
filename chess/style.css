@@ -1,3 +1,8 @@
+*, body {
+	margin: 0;
+	padding: 0;
+}
+
 .board {
     width: 400px;
     margin: auto
@@ -11,4 +16,26 @@
 .move-history {
     max-height: 100px;
     overflow-y: scroll;
+}
+
+.center-wrapper {
+	position: absolute;
+	top: 5%;
+	left: 50%;
+
+	display: none;
+}
+
+#promotion-modal {
+	position: relative;
+	width: 250px;
+	margin-left: -125px;
+
+	padding: 15px;
+	background-color: #FAFAFA;
+	border: solid 2px #666;
+}
+
+#promotion {
+	margin-top: 10px;
 }
