@@ -234,17 +234,28 @@ class AlphaBetaPlayer():
     #Alpha: best already explored option along path to root for maximizer
     #Beta: best already explored option along path to root for minimizer
     """NOTE: We're treating player 1 as the maximizing player and player 2 as minimizing"""
-
+    """
+        Do we need deepcopy for each board in the recursive call?
+        Do we need player_turn = board[8][2] in each recursive call or just is max player?
+        Why do we return without checking everything in alphabeta? if (beta <= alpha): return best_move
+    """
 
     def __init__(self, game):
         self.game = game
         self.depth = 3
 
     def play(self, board):
-        """Equivalent to minimaxRoot function in javascript"""
         """Returns the best move as variable *num* """
+        """board is the canonical board"""
+
         depth = self.depth
+
         infinity = float('inf')
+
+        player = board[8][2]
+        maximizing_player = board[8][2]
+        is_maximising_player = True
+
 
         #Get available moves for the initial board state
         new_game_moves = self.game.getValidMoves(board, player)
@@ -253,108 +264,79 @@ class AlphaBetaPlayer():
         best_move = -infinity #Change to "best_move_score" and "best_move"
         best_move_found = None
 
-
-
+        #Iterate over initial moves and pass into the minimax function to recurse on
         for i in range(len(new_game_moves)):
 
             new_game_move = new_game_moves[i]
 
-            #Create a board copy so that we dont mess up the root
-
+            #Create a board copy so that we dont affect the root
             board_copy = copy.deepcopy(board)
-            new_board_state = game.get_state(board, new_game_move)
+
+            #Apply the move to the starting board to generate a new board
+            new_board_state = game.get_state(board_copy, new_game_move)
             
-            player_turn = board[8][3]
-
-            value = minimax(depth - 1, board, game, -infinity, infinity, player_turn)
+            #Play the game starting with this move up to 'depth' and assess it's value
+            value = minimax(depth - 1, board_copy, game, -infinity, infinity, not is_maximising_player, 1-player)
+            
+            #Grab the best move and return
             if(value >= bestMove):
-                bestMove = value
-                bestMoveFound = newGameMove
+                best_move = value
+                best_move_found = new_game_move
+        return best_move_found
 
-        return bestMoveFound
 
-
-    def minimax(self, depth, board, game, alpha, beta, player):
+    def minimax(self, depth, board, game, alpha, beta, is_maximising_player, player):
         #position_count+=1
 
         #Base case where we've reached the max depth to explore
         if depth == 0:
+            #Negate for what reason?
             return -self.game.getScore(board, player)
 
-
+        #Get all available moves stemming from the passed board state
         new_game_moves = self.game.getValidMoves(board, player)
 
         #if maximizing player (assume 1 for now)
-        if(player==1):
+        if(is_maximising_player):
+
+            #Start best player at the worst possible score
             best_move = -infinity
 
             for i in range(len(new_game_moves)):
 
-                #This should capture ugly_move and undo in one
-                #Create a board copy so that we dont mess up the root
-                canonical_board = self.game.getCanonicalForm(board, curPlayer)
-                board_copy = copy.deepcopy(canonical_board)
-                #1-player to flip between player 1 and 0
-                best_move = Math.max(bestMove, minimax(depth - 1, game, alpha, beta, 1-player))
+                new_game_move = new_game_moves[i]
+                #player_turn = board[8][2]
+
+                board_copy = copy.deepcopy(board)
+                new_board_state = game.get_state(board_copy, new_game_move)
+
+                # "1-player" to flip between player 1 and 0 instead of is_maximising_player
+                best_move = Math.max(best_move, minimax(depth - 1, board_copy, game, -infinity, infinity, not is_maximising_player, 1-player))
                 
-                alpha = Math.max(alpha, bestMove);
+                alpha = Math.max(alpha, best_move)
+
                 if (beta <= alpha):
-                    return bestMove
+                    return best_move
+
+            return best_move
 
         else:
             best_move = infinity
             for i in range(new_game_moves):
-                best_move = Math.min(bestMove, minimax(depth - 1, game, alpha, beta, 1-player))
 
-                beta = Math.min(beta, bestMove)
+                new_game_move = new_game_moves[i]
+
+                board_copy = copy.deepcopy(board)
+                new_board_state = game.get_state(board_copy, new_game_move)
+
+                best_move = Math.min(best_move, minimax(depth - 1, board_copy, game, -infinity, infinity, not is_maximising_player, 1-player))
+
+                beta = Math.min(beta, best_move)
 
                 if (beta <= alpha):
-                    return bestMove
+                    return best_move
 
-            return bestMove
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#class AlphaBetaPlayer():
-#     """First build a game deep """
-#     #Alpha: best already explored option along path to root for maximizer
-#     #Beta: best already explored option along path to root for minimizer
-#     def __init__(self, game):
-#         self.game = game
-#     def play(self, board):
-#         """Returns the best move as variable *num* """
-#         rootNode = generateGameTree()
-#         best_state = alpha_beta_search(rootNode)
-#     def generateGameTree(self, current_board, n_levels):
-#         """Method to generate a game tree N moves out to work on"""
-#         #Get integer representation with generate moves from chessGame
-#         #Get all available moves from current position in game tree
-#         starting_valid_moves = self.game.getValidMoves()
-#         #Go n levels deep in the tree
-#         #def getValidMoves(self, board, player):
-
-
-
-
+            return best_move
 
 
 
