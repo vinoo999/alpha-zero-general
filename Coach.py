@@ -84,6 +84,7 @@ class Coach():
                 end = time.time()
     
                 for eps in range(self.args.numEps):
+                    # TODO: Parallelize executeEpisode() calls
                     self.mcts = MCTS(copy.deepcopy(self.game), self.nnet, self.args)   # reset search tree
                     iterationTrainExamples += self.executeEpisode()
     
