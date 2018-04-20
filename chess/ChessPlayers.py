@@ -4,12 +4,11 @@ from chess.ChessUtil import *
 from chess.ChessConstants import *
 
 import numpy as np
+import copy
 from queue import Queue
 
 
-class AlphaBetaPlayer():
-    def __init__(self, game):
-        self.game = game
+
 
 
 class RandomPlayer():
@@ -197,4 +196,175 @@ class HumanNetworkChessPlayer():
                 print('Invalid')
 
         return num
+
+
+
+
+
+
+
+
+"""
+/
+9x8 mcts board
+
+passing around this board state: self.game.getCanonicalForm(board, curPlayer)
+
+load_mcts:load board as game current board
+
+for each state get all valid moves
+    
+    game.nextmove
+    next_state = game.getnextstate
+    return a tuple score, state it was at
+
+    copy.deepcopy on the board to not effect
+
+    board class, and board-array, and the game. Were talking about board-array
+
+    load mcts creates board object from board array
+"""
+
+
+
+
+
+
+class AlphaBetaPlayer(): 
+    #Alpha: best already explored option along path to root for maximizer
+    #Beta: best already explored option along path to root for minimizer
+    """NOTE: We're treating player 1 as the maximizing player and player 2 as minimizing"""
+
+
+    def __init__(self, game):
+        self.game = game
+        self.depth = 3
+
+    def play(self, board):
+        """Equivalent to minimaxRoot function in javascript"""
+        """Returns the best move as variable *num* """
+        depth = self.depth
+        infinity = float('inf')
+
+        #Get available moves for the initial board state
+        new_game_moves = self.game.getValidMoves(board, player)
+
+        #Start off the player with their worst possible score
+        best_move = -infinity #Change to "best_move_score" and "best_move"
+        best_move_found = None
+
+
+
+        for i in range(len(new_game_moves)):
+
+            new_game_move = new_game_moves[i]
+
+            #Create a board copy so that we dont mess up the root
+
+            board_copy = copy.deepcopy(board)
+            new_board_state = game.get_state(board, new_game_move)
+            
+            player_turn = board[8][3]
+
+            value = minimax(depth - 1, board, game, -infinity, infinity, player_turn)
+            if(value >= bestMove):
+                bestMove = value
+                bestMoveFound = newGameMove
+
+        return bestMoveFound
+
+
+    def minimax(self, depth, board, game, alpha, beta, player):
+        #position_count+=1
+
+        #Base case where we've reached the max depth to explore
+        if depth == 0:
+            return -self.game.getScore(board, player)
+
+
+        new_game_moves = self.game.getValidMoves(board, player)
+
+        #if maximizing player (assume 1 for now)
+        if(player==1):
+            best_move = -infinity
+
+            for i in range(len(new_game_moves)):
+
+                #This should capture ugly_move and undo in one
+                #Create a board copy so that we dont mess up the root
+                canonical_board = self.game.getCanonicalForm(board, curPlayer)
+                board_copy = copy.deepcopy(canonical_board)
+                #1-player to flip between player 1 and 0
+                best_move = Math.max(bestMove, minimax(depth - 1, game, alpha, beta, 1-player))
+                
+                alpha = Math.max(alpha, bestMove);
+                if (beta <= alpha):
+                    return bestMove
+
+        else:
+            best_move = infinity
+            for i in range(new_game_moves):
+                best_move = Math.min(bestMove, minimax(depth - 1, game, alpha, beta, 1-player))
+
+                beta = Math.min(beta, bestMove)
+
+                if (beta <= alpha):
+                    return bestMove
+
+            return bestMove
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#class AlphaBetaPlayer():
+#     """First build a game deep """
+#     #Alpha: best already explored option along path to root for maximizer
+#     #Beta: best already explored option along path to root for minimizer
+#     def __init__(self, game):
+#         self.game = game
+#     def play(self, board):
+#         """Returns the best move as variable *num* """
+#         rootNode = generateGameTree()
+#         best_state = alpha_beta_search(rootNode)
+#     def generateGameTree(self, current_board, n_levels):
+#         """Method to generate a game tree N moves out to work on"""
+#         #Get integer representation with generate moves from chessGame
+#         #Get all available moves from current position in game tree
+#         starting_valid_moves = self.game.getValidMoves()
+#         #Go n levels deep in the tree
+#         #def getValidMoves(self, board, player):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

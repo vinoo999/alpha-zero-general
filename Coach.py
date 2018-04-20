@@ -8,6 +8,7 @@ from pickle import Pickler, Unpickler
 from random import shuffle
 from chess.ChessUtil import decode_move
 from chess.ChessGame import display
+import copy
 
 class Coach():
     """
@@ -83,7 +84,7 @@ class Coach():
                 end = time.time()
     
                 for eps in range(self.args.numEps):
-                    self.mcts = MCTS(self.game, self.nnet, self.args)   # reset search tree
+                    self.mcts = MCTS(copy.deepcopy(self.game), self.nnet, self.args)   # reset search tree
                     iterationTrainExamples += self.executeEpisode()
     
                     # bookkeeping + plot progress
@@ -113,10 +114,10 @@ class Coach():
             # training new network, keeping a copy of the old one
             self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
             self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
-            pmcts = MCTS(self.game, self.pnet, self.args)
+            pmcts = MCTS(copy.deepcopy(self.game), self.pnet, self.args)
             
             self.nnet.train(trainExamples)
-            nmcts = MCTS(self.game, self.nnet, self.args)
+            nmcts = MCTS(copy.deepcopy(self.game), self.nnet, self.args)
 
             print('PITTING AGAINST PREVIOUS VERSION')
             arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
