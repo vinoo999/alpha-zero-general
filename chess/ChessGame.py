@@ -163,6 +163,10 @@ class ChessGame(Game):
 
     def stringRepresentation(self, board):
         # 9x8 numpy array (canonical board)
+        #right now the last row stores the number of half moves and num moves. Like 3 fold rep, all we care about is board state. 
+        board = np.copy(board)
+        board[8,6] = 0
+        board[8,7] = 0
         return board.tostring()
 
     def getScore(self, board, player):
