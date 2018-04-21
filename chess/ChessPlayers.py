@@ -245,7 +245,7 @@ class AlphaBetaPlayer():
 
     def __init__(self, game):
         self.game = game
-        self.depth = 2
+        self.depth = 1
 
     def play(self, board):
         """Returns the best move as variable *num* """
@@ -258,7 +258,6 @@ class AlphaBetaPlayer():
 
         pos_player_start = True if player==0 else False
 
-
         is_maximising_player = True
 
         print("Start playing")
@@ -270,11 +269,11 @@ class AlphaBetaPlayer():
 
         #print("starting available moves: " + str(len(new_game_moves)))
         #Start off the player with their worst possible score
-        best_move = -infinity #Change to "best_move_score" and "best_move"
-        best_move_found = None
+        best_move_score = -infinity #Change to "best_move_score" and "best_move"
+        best_move = None
 
         best_moves_scores = [-infinity, -infinity, -infinity]
-        best_moves_found = [0, 0, 0]
+        best_moves = [0, 0, 0]
 
         print("start timer")
         start = timer()
@@ -297,35 +296,38 @@ class AlphaBetaPlayer():
             #Play the game starting with this move up to 'depth' and assess it's value
             value = self.minimax(depth - 1, board_copy, self.game, -infinity, infinity, 1-player, not is_maximising_player)#1-player)
             
+            print()
+
             #Grab the best move and return
-            if(value >= best_move):
-                best_move = value
-                best_move_found = new_game_move
-                print("*************************\n Best MOve: {} , Score: {} , Prev Value {}".format(decode_move(best_move_found), best_move, value))
+            if(value >= best_move_score):
+                best_move_score = value
+                best_move = new_game_move
+                print("*************************\n Best Move: {} , best_move_score: {} , value {}".format(decode_move(best_move), best_move_score, value))
             else:
                 print("LWEHRLEWH************************************")
 
+            #Find the minimum of the highest score values, and see if our new score is larger (i.e should be inserted into the 3 best move array)
             min_score = infinity
             worst_move = i
-            for i in range(len(best_moves_found)):
+            for i in range(len(best_moves)):
                 if best_moves_scores[i] < min_score:
                     min_score = best_moves_scores[i]
                     worst_move = i
+            if best_move_score > min_score:
+                best_moves_scores[worst_move] = best_move_score
+                best_moves[worst_move] = best_move
 
-            if best_move > min_score:
-                best_moves_scores[worst_move] = best_move
-                best_moves_found[worst_move] = best_move_found
 
 
-        print("COLOR: {} \nBEST MOVES: {} \n SCORES {} \n DECISION: {}".format(player, list(map(decode_move, best_moves_found)), best_moves_scores, decode_move(best_move_found)))
+        print("COLOR: {} \nBEST MOVES: {} \n SCORES {} \n DECISION: {}".format(player, list(map(decode_move, best_moves)), best_moves_scores, decode_move(best_move)))
 
         print("Finished a decision.")
         
         end = timer()
         print("Time elapsed: " + str(end - start))
 
-        print(best_move_found)
-        return best_move_found
+        print(best_move)
+        return best_move
 
 
     def minimax(self, depth, board, game, alpha, beta, player, is_maximising_player):
@@ -340,6 +342,8 @@ class AlphaBetaPlayer():
             #print("At depth zero!------------------------------------------------------------------")
             #print("The score is: " + str(-self.game.getScore(board, player)))
             #Negate for what reason?
+
+            #Essentially a call to Evaluate_board()
             return -self.game.getScore(board, player)
 
         #Get all available moves stemming from the passed board state
@@ -361,7 +365,7 @@ class AlphaBetaPlayer():
             #print("")
             #print("player number: " + str(player))
             #Start best player at the worst possible score
-            best_move = -infinity
+            best_move_score = -infinity
 
             for i in range(len(new_game_moves)):
                 #print("i in max player is: " + str(i))
@@ -378,7 +382,7 @@ class AlphaBetaPlayer():
                 #print("call to minimax on player: " + str(1-player))
                 #print("above best move, depth-1 = " + str(depth-1))
                 time_next_state = time.time()
-                best_move = max(best_move, self.minimax(depth - 1, new_board_state, tmp_game, -infinity, infinity, 1-player, not is_maximising_player))#1-player)
+                best_move_score = max(best_move_score, self.minimax(depth - 1, new_board_state, tmp_game, -infinity, infinity, 1-player, not is_maximising_player))#1-player)
                 time_end_next_state = time.time()
                 #print("Get next state time  maximizer: {}".format(time_end_next_state-time_next_state))
 
@@ -390,16 +394,16 @@ class AlphaBetaPlayer():
 
                 #print("best_move")
                 #print(best_move)
-                alpha = max(alpha, best_move)
+                alpha = max(alpha, best_move_score)
 
                 # print("alpha: " + str(alpha))
                 # print("beta: " + str(beta))
 
                 if (beta <= alpha):
                     #print("------------------will return a move! ()-------------------------------------")
-                    return best_move
+                    return best_move_score
             #print("------------------will return a move!-------------------------------------")
-            return best_move
+            return best_move_score
 
         else:
             # print("Minimizing player", len(new_game_moves))
@@ -412,7 +416,7 @@ class AlphaBetaPlayer():
             #print("")
             #print("player number: " + str(player))
             #print("len(new_game_moves): " +str(len(new_game_moves)))
-            best_move = infinity
+            best_move_score = infinity
 
             for i in range(len(new_game_moves)):
 
@@ -432,21 +436,21 @@ class AlphaBetaPlayer():
                 #print("Get next state time minimizer: {}".format(time_end_next_state-time_next_state))
                 #print("in mini, i = " + str(i))
 
-                best_move = min(best_move, self.minimax(depth - 1, new_board_state, self.game, -infinity, infinity, 1-player, not is_maximising_player))#1-player)
+                best_move_score = min(best_move_score, self.minimax(depth - 1, new_board_state, self.game, -infinity, infinity, 1-player, not is_maximising_player))#1-player)
                 #print("Mini------best_move")
                 #print(best_move)
 
                 #Decrement the count so that we dont include boards that were touched in the search tree
                 self.game.state_counts[self.game.stringRepresentation(new_board_state)] -= 1
 
-                beta = min(beta, best_move)
+                beta = min(beta, best_move_score)
 
                 if (beta <= alpha):
                     #print("------------------will return a move! ()-------------------------------------")
-                    return best_move
+                    return best_move_score
 
             #print("------------------will return a move!-------------------------------------")
-            return best_move
+            return best_move_score
 
 
 
