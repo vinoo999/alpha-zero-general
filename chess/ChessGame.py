@@ -155,6 +155,9 @@ class ChessGame(Game):
 
     def getCanonicalForm(self, board, player):
         new_board = copy.deepcopy(board)
+        #board[8,6] = 0
+        #board[8,7] = 0
+
         return new_board 
 
     def getSymmetries(self, board, pi):
