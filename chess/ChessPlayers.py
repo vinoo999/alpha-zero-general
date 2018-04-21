@@ -11,7 +11,18 @@ from timeit import default_timer as timer
 import time
 
 
+class NNetNetworkPlayer():
+    def __init__(self, game, ckpt_path, ckpt_file, args):
+        self.nnet = NNet(game)
+        self.args = docdict(args)
 
+        self.nnet.load_checkpoint(ckpt_path, ckpt_file)
+
+        self.mcts = MCTS(game, self.nnet, self.args)
+
+    def play(self, board):
+        tmp = self.args["temp"] if "temp" in self.args else 0
+        return np.argmax(self.mcts.getActionProb(board, temp=tmp))
 
 
 class RandomPlayer():
