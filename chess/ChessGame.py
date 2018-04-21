@@ -142,6 +142,10 @@ class ChessGame(Game):
         if b.in_checkmate():
             return -1
         if b.in_stalemate() or b.insufficient_material() or b.half_moves >= 50 or self.state_counts[str_rep_no_move] >= 3:
+            print("Stalemate: ", b.in_stalemate())
+            print("insufficient_material: " , b.insufficient_material())
+            print("Half Moves: ", b.half_moves)
+            print("3=fold rep: ", self.state_counts[str_rep_no_move])
             return -1e-5
         b.turn = swap_color(b.turn)
         if b.in_checkmate():

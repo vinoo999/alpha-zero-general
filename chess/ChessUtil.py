@@ -260,13 +260,29 @@ def make_pretty(chess, ugly_move):
 
 def evaluate_board(mcts_board, player):
     board = mcts_board[0:8,:]
+    #print("evaluate the board for player: " + str(player))
 
     val = 0
     for i in range(8):
         for j in range(8):
-            piece = MCTS_DECODER[abs(board[i,j])]
+            piece_key = abs(board[i,j])
+            #print("piece_key: " + str(piece_key))
+            if(piece_key == 0):
+                continue
+            piece = MCTS_DECODER[piece_key]
+            #print("piece: " + str(piece))
             sign = -1 if board[i,j] < 0 else 1
+            #print("sign: " + str(sign))
             val += get_piece_value(piece,i,j, sign)
+            # print("piece val: " + str(get_piece_value(piece,i,j, sign)))
+            # print("i="+str(i)+", j=" +str(j) + " total val is: " + str(val))
+    print("")
+    print("EVAL BOARD-------------------------------------")
+    print("PLayer is: " + str(player))
+    print("FINAL VAL: " + str(val))
+
+    print("EVAL BOARD-------------------------------------")
+
 
     return val
 
@@ -289,12 +305,13 @@ def get_piece_value(piece, i, j, color):
         'k' : 900
     }
 
-    eval_mat = eval_map[piece]
+    eval_matrix = eval_map[piece]
 
-    if piece > 0:
-        return eval_offset[piece] + eval_mat[j][i]
+    if color > 0:
+        return eval_offset[piece] + eval_matrix[j][i]
     else:
-        return color*(eval_offset[piece] + eval_mat[::-1][j][i])
+        #Reverse the eval matrix for the opposite color
+        return color*(eval_offset[piece] + eval_matrix[::-1][j][i])
 
 
 def trim(str):

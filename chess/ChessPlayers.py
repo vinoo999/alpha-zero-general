@@ -6,6 +6,9 @@ from chess.ChessConstants import *
 import numpy as np
 import copy
 from queue import Queue
+import math
+from timeit import default_timer as timer
+import time
 
 
 
@@ -242,100 +245,207 @@ class AlphaBetaPlayer():
 
     def __init__(self, game):
         self.game = game
-        self.depth = 3
+        self.depth = 2
 
     def play(self, board):
         """Returns the best move as variable *num* """
         """board is the canonical board"""
-
         depth = self.depth
 
         infinity = float('inf')
 
         player = board[8][2]
-        maximizing_player = board[8][2]
+
+        pos_player_start = True if player==0 else False
+
+
         is_maximising_player = True
 
+        print("Start playing")
+        print("player number: " + str(player))
 
         #Get available moves for the initial board state
         new_game_moves = self.game.getValidMoves(board, player)
+        new_game_moves = [i for i, e in enumerate(new_game_moves) if e != 0]
 
+        #print("starting available moves: " + str(len(new_game_moves)))
         #Start off the player with their worst possible score
         best_move = -infinity #Change to "best_move_score" and "best_move"
         best_move_found = None
 
+        best_moves_scores = [-infinity, -infinity, -infinity]
+        best_moves_found = [0, 0, 0]
+
+        print("start timer")
+        start = timer()
+
         #Iterate over initial moves and pass into the minimax function to recurse on
         for i in range(len(new_game_moves)):
+            #print("--------------------------------------------------------------")
+            #print("Generating a move on i= " + str(i))
+            #print("--------------------------------------------------------------")
 
             new_game_move = new_game_moves[i]
 
             #Create a board copy so that we dont affect the root
             board_copy = copy.deepcopy(board)
 
-            #Apply the move to the starting board to generate a new board
-            new_board_state = game.get_state(board_copy, new_game_move)
+            #Apply the move to the starting board to generate a new board (get next state is tuple holding board and count)
+            new_board_state = self.game.getNextState(board_copy, player, new_game_move)[0]
+
             
             #Play the game starting with this move up to 'depth' and assess it's value
-            value = minimax(depth - 1, board_copy, game, -infinity, infinity, not is_maximising_player, 1-player)
+            value = self.minimax(depth - 1, board_copy, self.game, -infinity, infinity, 1-player, not is_maximising_player)#1-player)
             
             #Grab the best move and return
-            if(value >= bestMove):
+            if(value >= best_move):
                 best_move = value
                 best_move_found = new_game_move
+                print("*************************\n Best MOve: {} , Score: {} , Prev Value {}".format(decode_move(best_move_found), best_move, value))
+            else:
+                print("LWEHRLEWH************************************")
+
+            min_score = infinity
+            worst_move = i
+            for i in range(len(best_moves_found)):
+                if best_moves_scores[i] < min_score:
+                    min_score = best_moves_scores[i]
+                    worst_move = i
+
+            if best_move > min_score:
+                best_moves_scores[worst_move] = best_move
+                best_moves_found[worst_move] = best_move_found
+
+
+        print("COLOR: {} \nBEST MOVES: {} \n SCORES {} \n DECISION: {}".format(player, list(map(decode_move, best_moves_found)), best_moves_scores, decode_move(best_move_found)))
+
+        print("Finished a decision.")
+        
+        end = timer()
+        print("Time elapsed: " + str(end - start))
+
+        print(best_move_found)
         return best_move_found
 
 
-    def minimax(self, depth, board, game, alpha, beta, is_maximising_player, player):
+    def minimax(self, depth, board, game, alpha, beta, player, is_maximising_player):
         #position_count+=1
+        #print("In minimax at depth: " + str(depth))
+        #print("player is: " + str(player))
 
+        infinity = float('inf')
+        #print("player: " +str(player))
         #Base case where we've reached the max depth to explore
         if depth == 0:
+            #print("At depth zero!------------------------------------------------------------------")
+            #print("The score is: " + str(-self.game.getScore(board, player)))
             #Negate for what reason?
             return -self.game.getScore(board, player)
 
         #Get all available moves stemming from the passed board state
         new_game_moves = self.game.getValidMoves(board, player)
+        new_game_moves = [i for i, e in enumerate(new_game_moves) if e != 0]
+
+        #print("available moves: " + str(new_game_moves))
 
         #if maximizing player (assume 1 for now)
-        if(is_maximising_player):
+        if(is_maximising_player):#1-player)):
+            # print("Maximising player", len(new_game_moves))
+            # print("is_maximising_player = " + str(is_maximising_player))
+            # print("Currently in recurisve call with player: " + str(player))
+            # print("Player to be passed into next recursive call: " + str(1-player))
+            # print("is_maximising_player to be passed = " + str( not is_maximising_player))
+            # print("The depth is: " + str(depth))
+            # print("")
 
+            #print("")
+            #print("player number: " + str(player))
             #Start best player at the worst possible score
             best_move = -infinity
 
             for i in range(len(new_game_moves)):
-
+                #print("i in max player is: " + str(i))
                 new_game_move = new_game_moves[i]
                 #player_turn = board[8][2]
-
+                time_copying = time.time()
                 board_copy = copy.deepcopy(board)
-                new_board_state = game.get_state(board_copy, new_game_move)
+                tmp_game = copy.deepcopy(self.game)
+                time_end_copying = time.time()
+                #print("Deep Copy Maximizer: {}".format(time_end_copying-time_copying))
+                new_board_state = tmp_game.getNextState(board_copy, player, new_game_move)[0]
 
                 # "1-player" to flip between player 1 and 0 instead of is_maximising_player
-                best_move = Math.max(best_move, minimax(depth - 1, board_copy, game, -infinity, infinity, not is_maximising_player, 1-player))
-                
-                alpha = Math.max(alpha, best_move)
+                #print("call to minimax on player: " + str(1-player))
+                #print("above best move, depth-1 = " + str(depth-1))
+                time_next_state = time.time()
+                best_move = max(best_move, self.minimax(depth - 1, new_board_state, tmp_game, -infinity, infinity, 1-player, not is_maximising_player))#1-player)
+                time_end_next_state = time.time()
+                #print("Get next state time  maximizer: {}".format(time_end_next_state-time_next_state))
+
+
+                #Decrement the count so that we dont include boards that were touched in the search tree
+                self.game.state_counts[self.game.stringRepresentation(new_board_state)] -= 1
+
+
+
+                #print("best_move")
+                #print(best_move)
+                alpha = max(alpha, best_move)
+
+                # print("alpha: " + str(alpha))
+                # print("beta: " + str(beta))
 
                 if (beta <= alpha):
+                    #print("------------------will return a move! ()-------------------------------------")
                     return best_move
-
+            #print("------------------will return a move!-------------------------------------")
             return best_move
 
         else:
+            # print("Minimizing player", len(new_game_moves))
+            # print("is_maximising_player = " + str(is_maximising_player))
+            # print("Currently in recurisve call with player: " + str(player))
+            # print("Player to be passed into next recursive call: " + str(1-player))
+            # print("is_maximising_player to be passed = " + str( not is_maximising_player))
+            # print("The depth is: " + str(depth))
+
+            #print("")
+            #print("player number: " + str(player))
+            #print("len(new_game_moves): " +str(len(new_game_moves)))
             best_move = infinity
-            for i in range(new_game_moves):
+
+            for i in range(len(new_game_moves)):
 
                 new_game_move = new_game_moves[i]
 
+
+                time_copying = time.time()
                 board_copy = copy.deepcopy(board)
-                new_board_state = game.get_state(board_copy, new_game_move)
+                tmp_game = copy.deepcopy(self.game)
+                time_end_copying = time.time()
+                #print("Deep Copy Minimizer: {}".format(time_end_copying-time_copying))
 
-                best_move = Math.min(best_move, minimax(depth - 1, board_copy, game, -infinity, infinity, not is_maximising_player, 1-player))
 
-                beta = Math.min(beta, best_move)
+                time_next_state = time.time()
+                new_board_state = tmp_game.getNextState(board_copy, player, new_game_move)[0]
+                time_end_next_state = time.time()
+                #print("Get next state time minimizer: {}".format(time_end_next_state-time_next_state))
+                #print("in mini, i = " + str(i))
+
+                best_move = min(best_move, self.minimax(depth - 1, new_board_state, self.game, -infinity, infinity, 1-player, not is_maximising_player))#1-player)
+                #print("Mini------best_move")
+                #print(best_move)
+
+                #Decrement the count so that we dont include boards that were touched in the search tree
+                self.game.state_counts[self.game.stringRepresentation(new_board_state)] -= 1
+
+                beta = min(beta, best_move)
 
                 if (beta <= alpha):
+                    #print("------------------will return a move! ()-------------------------------------")
                     return best_move
 
+            #print("------------------will return a move!-------------------------------------")
             return best_move
 
 
