@@ -42,7 +42,7 @@ class ChessGame(Game):
         if action == self.getActionSize()-1:
             game.turn = swap_color(game.turn)
             next_board = np.array(game.get_board_mcts())
-            no_move_board = np.copy(next_board)
+            no_move_board = copy.deepcopy(next_board)
             no_move_board[8,6] = 0
             no_move_board[8,7] = 0
             self.state_counts[self.stringRepresentation(no_move_board)] += 1
@@ -61,7 +61,7 @@ class ChessGame(Game):
             move = {'from' : pos1, 'to' : pos2}
             game.do_move(move)
             next_board = np.array(game.get_board_mcts())
-            no_move_board = np.copy(next_board)
+            no_move_board = copy.deepcopy(next_board)
             no_move_board[8,6] = 0
             no_move_board[8,7] = 0
             self.state_counts[self.stringRepresentation(no_move_board)] += 1
@@ -87,7 +87,7 @@ class ChessGame(Game):
 
             game.do_move(move)
             next_board = np.array(game.get_board_mcts())
-            no_move_board = np.copy(next_board)
+            no_move_board = copy.deepcopy(next_board)
             no_move_board[8,6] = 0
             no_move_board[8,7] = 0
             self.state_counts[self.stringRepresentation(no_move_board)] += 1
@@ -132,12 +132,17 @@ class ChessGame(Game):
     def getGameEnded(self, board, player):
         b = Board(mcts_board=board)
 
-
-        no_move_board = np.copy(board)
+        no_move_board = copy.deepcopy(board)
         no_move_board[8,6] = 0
         no_move_board[8,7] = 0
         str_rep_no_move = self.stringRepresentation(no_move_board)
-
+        
+        #print('**********************************************************************')
+        #display(board)
+        #print(board)
+        #print("Num count: {}".format(self.state_counts[str_rep_no_move]))
+        #print('**********************************************************************')
+        
         # print("Num count: ", self.state_counts[str_rep_no_move])
         if b.in_checkmate():
             return -1
@@ -164,9 +169,9 @@ class ChessGame(Game):
     def stringRepresentation(self, board):
         # 9x8 numpy array (canonical board)
         #right now the last row stores the number of half moves and num moves. Like 3 fold rep, all we care about is board state. 
-        board = np.copy(board)
-        board[8,6] = 0
-        board[8,7] = 0
+        new_board = copy.deepcopy(board)
+        new_board[8,6] = 0
+        new_board[8,7] = 0
         return board.tostring()
 
     def getScore(self, board, player):
