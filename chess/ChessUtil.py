@@ -1,6 +1,7 @@
 import re
 import copy
 from .ChessConstants import *
+import sys
 
 # /*****************************************************************************
  # * UTILITY FUNCTIONS
@@ -273,15 +274,23 @@ def evaluate_board(mcts_board, player):
             #print("piece: " + str(piece))
             sign = -1 if board[i,j] < 0 else 1
             #print("sign: " + str(sign))
-            val += get_piece_value(piece,i,j, sign)
+            val += get_piece_value(piece, i, j, sign)
             # print("piece val: " + str(get_piece_value(piece,i,j, sign)))
             # print("i="+str(i)+", j=" +str(j) + " total val is: " + str(val))
-    print("")
-    print("EVAL BOARD-------------------------------------")
-    print("PLayer is: " + str(player))
-    print("FINAL VAL: " + str(val))
+    # print("")
+    # print("EVAL BOARD-------------------------------------")
+    # print("PLayer is: " + str(player))
+    # print("FINAL VAL: " + str(val))
 
-    print("EVAL BOARD-------------------------------------")
+    # print("EVAL BOARD-------------------------------------")
+
+    # if(val >= 5.5):
+    #     print("WHOAAAAA VALUE IS:------------------------------------------------ " + str(val))
+    #     sys.exit()
+    # else:
+    #     print("HOLY FUCKING SHIT a leaf node was actually not a 5.5, this means we're setting it to 5.5 somewhere in the recursion! ")
+    #     sys.exit()
+    
 
 
     return val
