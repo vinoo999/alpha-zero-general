@@ -2,16 +2,29 @@ from chess.ChessGame import display
 from chess.ChessLogic import Board
 from chess.ChessUtil import *
 from chess.ChessConstants import *
-
+from pickle import Unpickler
 import numpy as np
 import copy
 from queue import Queue
 import math
 from timeit import default_timer as timer
 import time
+import os
+from utils import *
+from MCTS import MCTS
 
+class NNetNetworkPlayer():
+    def __init__(self, game, ckpt_path, ckpt_file, args):
+        self.nnet = NNet(game)
+        self.args = docdict(args)
 
+        self.nnet.load_checkpoint(ckpt_path, ckpt_file)
 
+        self.mcts = MCTS(game, self.nnet, self.args)
+
+    def play(self, board):
+        tmp = self.args["temp"] if "temp" in self.args else 0
+        return np.argmax(self.mcts.getActionProb(board, temp=tmp))
 
 
 class RandomPlayer():
@@ -229,11 +242,6 @@ for each state get all valid moves
     load mcts creates board object from board array
 """
 
-
-
-
-
-
 class AlphaBetaPlayer(): 
     #Alpha: best already explored option along path to root for maximizer
     #Beta: best already explored option along path to root for minimizer
@@ -433,10 +441,75 @@ class AlphaBetaPlayer():
             return best_move_score
 
 
+class EnsemblePlayer():
+
+    def __init__(self, game, networks, example_file):
+        self.game = game
+        print(len(networks))
+        self.weights = np.zeros((len(networks),))
+        self.networks = networks
+
+        beta = 0.1
+        batch_size = 64
+
+        examples = self.loadTrainExamples(example_file)
+        final_examples = []
+        for e in examples:
+            final_examples.extend(e)
+        input_boards, target_pis, target_vs = list(zip(*final_examples))
+        
+        input_boards = np.asarray(input_boards)
+        target_pis = np.asarray(target_pis)
+        target_vs = np.asarray(target_vs)
+
+        scores = {}
+        num_nets = len(networks)
+        for i in range(num_nets):
+            network = networks[i]
+            loss = network.nnet.model.evaluate(x = input_boards, y = [target_pis, target_vs], batch_size=batch_size, verbose=1)
+            scores[i] = loss[0]
+            print("Loss: ", loss)
+
+        top_nets = sorted(scores, key=scores.get)
+
+        sum_exp_betas = np.sum(np.exp(beta*np.arange(1,num_nets+1)))
+
+        print(self.weights.shape)
+        for j in range(num_nets):
+            top_net_num = top_nets[j]
+            print(top_net_num)
+            self.weights[top_net_num] = np.exp(beta*(num_nets - j))/sum_exp_betas
 
 
+    def predict(self, board):
+        return_pi = np.zeros(self.game.getActionSize())
+        return_v = 0
+        
+        board = board[np.newaxis, :, :]
+        for i in range(len(self.networks)):
+            network = self.networks[i]
+            pi, v = network.nnet.model.predict(board)
+            return_pi += self.weights[i]*pi[0]
+            return_v += self.weights[i]*v[0]
+
+        return return_pi, return_v
 
 
+    def play(self, board):
+        args = dotdict({'numMCTSSims': 50, 'cpuct': 1.0})
+        mcts = MCTS(self.game, self, args)
+        return np.argmax(mcts.getActionProb(board, temp=0))
+
+
+    def loadTrainExamples(self, examples_file):
+        if not os.path.isfile(examples_file):
+            print(examples_file)
+            print("File with trainExamples not found.")
+            sys.exit()
+        else:
+            print("File with trainExamples found. Read it.")
+            with open(examples_file, "rb") as f:
+                return Unpickler(f).load()
 
 
 
