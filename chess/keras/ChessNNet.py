@@ -29,4 +29,9 @@ class ChessNNet():
         self.v = Dense(1, activation='tanh', name='v')(s_fc2)                    # batch_size x 1
 
         self.model = Model(inputs=self.input_boards, outputs=[self.pi, self.v])
+
+        # Fix for async flask bug; see https://github.com/keras-team/keras/issues/2397
+        self.model._make_predict_function()
+        self.graph = tf.get_default_graph()
+
         self.model.compile(loss=['categorical_crossentropy','mean_squared_error'], optimizer=Adam(args.lr))

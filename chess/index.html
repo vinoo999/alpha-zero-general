@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div id="condom"></div>
 <div id="board" class="board"></div>
 <div class="info">
     <br><br>
@@ -14,8 +15,8 @@
     <div id="move-history" class="move-history">
     </div>
 </div>
-<div class="center-wrapper">
-    <div id="promotion-modal">
+<div class="center-wrapper" id="promotion-wrapper">
+    <div class="modal">
         <h3>Select a promotion: </h3>
         <select id="promotion">
             <option value="invalid"> -- </option>
@@ -24,6 +25,12 @@
             <option value="b">Bishop</option>
             <option value="r">Rook</option>
         </select>
+    </div>
+</div>
+<div class="center-wrapper" id="loading-wrapper">
+    <div class="modal">
+        <h2 id="loading-text">Loading...</h2>
+        <div class="loader"></div>
     </div>
 </div>
 <script src="lib/jquery/jquery-3.2.1.min.js"></script>

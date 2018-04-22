@@ -3,8 +3,16 @@ var sess_id;
 
 /* Shorthand for onready; create a new game session */
 $( function() {
+    // Render loading modal
+    $("#loading-text").text("Initializing new game...");
+    $("#loading-wrapper").show();
+
     var url = location.protocol + "//" + location.hostname + ":" + location.port + "/new_game";
     $.get(url, (id) => {
+        $("#condom").hide();
+        $("#loading-wrapper").hide();
+        $("#loading-text").text("Thinking...");
+
         /* Request handler */
         sess_id = id
     });
@@ -27,6 +35,9 @@ var makeBestMove = function () {
     var url = location.protocol + "//" + location.hostname + ":" + location.port + "/get_move";
     var data = { "sess_id": sess_id };
     var success = (move) => {
+        $("#condom").hide();
+        $("#loading-wrapper").hide();
+
         /* Request handler */
         move = JSON.parse(move);
         game.ugly_move(move);
@@ -36,6 +47,10 @@ var makeBestMove = function () {
             alert('Game over');
         }
     };
+
+    // Render loading modal
+    $("#condom").show();
+    $("#loading-wrapper").show();
 
     // Send request to flask server 
     $.ajax({
@@ -60,6 +75,8 @@ var sendMove = function (move, data) {
     // Build POST request
     var url = location.protocol + "//" + location.hostname + ":" + location.port + "/make_move";
     var success = (res) => {
+        //$("#loading-wrapper").hide();
+
         if (res == "OK") {
             removeGreySquares();
             if (move === null) {
@@ -70,6 +87,9 @@ var sendMove = function (move, data) {
             window.setTimeout(makeBestMove, 250);
         }
     }
+
+    // Render loading modal
+    //$("#loading-wrapper").show();
 
     // Send request to flask server 
     $.ajax({
@@ -89,7 +109,7 @@ var onDrop = function (source, target, piece) {
         /* Handle a promotion */
 
         // Show promotion modal
-        $(".center-wrapper").show();
+        $("#promotion-wrapper").show();
 
         // Set source and target data to parent closure so we can reference 
         // it dynamically from within the event handler
