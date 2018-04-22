@@ -15,25 +15,27 @@ any agent.
 g = ChessGame()
 
 # all players
-rp = RandomPlayer(g).play
+#rp = RandomPlayer(g).play
 #gp = GreedyOthelloPlayer(g).play
-#hp = HumanChessPlayer(g).play
+hp = HumanChessPlayer(g).play
 #abp = AlphaBetaPlayer(g).play
 
 # nnet players
-n1 = NNet(g)
-n1.load_checkpoint('saves/save-bc5a3cffa65','temp.pth.tar')
-args1 = dotdict({'numMCTSSims': 50, 'cpuct': 1.0})
-mcts1 = MCTS(g, n1, args1)
-n1p = lambda x: np.argmax(mcts1.getActionProb(x, temp=0))
-# #n1p = lambda x: np.argmax(n1.predict(x))
+# n1 = NNet(g)
+# n1.load_checkpoint('saves/save-bc5a3cffa65','best.pth.tar')
+# args1 = dotdict({'numMCTSSims': 50, 'cpuct': 1.0})
+# mcts1 = MCTS(g, n1, args1)
+# n1p = lambda x: np.argmax(mcts1.getActionProb(x, temp=0))
+n1 = NNetPlayer(g, "saves/save-bc5a3cffa65", "best.pth.tar", { 'numMCTSSims': 50, 'cpuct': 1.0, 'temp': 0 })
+n1p = n1.play
 
-n2 = NNet(g)
-n2.load_checkpoint('saves/save-bc5a3cffa65','temp.pth.tar')
-args2 = dotdict({'numMCTSSims': 50, 'cpuct': 1.0})
-mcts2 = MCTS(g, n2, args2)
-n2p = lambda x: np.argmax(mcts2.getActionProb(x, temp=0))
+# n2 = NNet(g)
+# n2.load_checkpoint('saves/save-bc5a3cffa65','best.pth.tar')
+# args2 = dotdict({'numMCTSSims': 50, 'cpuct': 1.0})
+# mcts2 = MCTS(g, n2, args2)
+# n2p = lambda x: np.argmax(mcts2.getActionProb(x, temp=0))
+n2 = NNetPlayer(g, "saves/save-bc5a3cffa65", "best.pth.tar", { 'numMCTSSims': 50, 'cpuct': 1.0, 'temp': 0 })
+n2p = n2.play
 
 arena = Arena.Arena(n1p, n2p, g, display=display)
-
-print(arena.playGames(2, verbose=True))
+arena.playGames(2, verbose=True)

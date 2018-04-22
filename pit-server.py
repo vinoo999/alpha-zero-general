@@ -24,6 +24,7 @@ class GameWrapper():
     def __init__(self, sess_id):
         self.g  = ChessGame()                              # Initialize chess game
         self.r  = NNetNetworkPlayer(self.g, ncp, ncf, nca) # Initialize computer player
+#       self.r  = RandomNetworkPlayer(self.g)
         self.rp = self.r.play
         self.h  = HumanNetworkChessPlayer(self.g)          # Initialize human player
         self.hp = self.h.play

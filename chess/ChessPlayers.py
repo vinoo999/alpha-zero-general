@@ -2,6 +2,9 @@ from chess.ChessGame import display
 from chess.ChessLogic import Board
 from chess.ChessUtil import *
 from chess.ChessConstants import *
+from chess.keras.NNet import NNetWrapper as NNet
+from MCTS import MCTS
+from utils import *
 
 import numpy as np
 import copy
@@ -11,10 +14,10 @@ from timeit import default_timer as timer
 import time
 
 
-class NNetNetworkPlayer():
+class NNetPlayer():
     def __init__(self, game, ckpt_path, ckpt_file, args):
         self.nnet = NNet(game)
-        self.args = docdict(args)
+        self.args = dotdict(args)
 
         self.nnet.load_checkpoint(ckpt_path, ckpt_file)
 
@@ -22,7 +25,40 @@ class NNetNetworkPlayer():
 
     def play(self, board):
         tmp = self.args["temp"] if "temp" in self.args else 0
-        return np.argmax(self.mcts.getActionProb(board, temp=tmp))
+        move = np.argmax(self.mcts.getActionProb(board, temp=tmp))
+        return move
+
+
+class NNetNetworkPlayer():
+    def __init__(self, game, ckpt_path, ckpt_file, args):
+        self.queue = Queue(maxsize=1)
+        self.nnet = NNet(game)
+        self.args = dotdict(args)
+
+        self.nnet.load_checkpoint(ckpt_path, ckpt_file)
+
+        self.mcts = MCTS(game, self.nnet, self.args)
+
+    def play(self, board):
+        tmp = self.args["temp"] if "temp" in self.args else 0
+        action = np.argmax(self.mcts.getActionProb(board, temp=tmp))
+        move = decode_move(action)
+
+        b = Board(mcts_board=board)
+        moves = b.generate_moves({'legal': True})
+
+        ugly_move = None
+        for i in range(len(moves)):
+            if (move['from'] == algebraic(moves[i]['from']) and move['to'] == algebraic(moves[i]['to']) and \
+                (('promotion' not in moves[i].keys()) or move['promotion'] == moves[i]['promotion'])):
+                ugly_move = moves[i]
+                break
+
+        assert ugly_move != None
+        print("SELECTED MOVE: " + str(ugly_move))
+
+        self.queue.put(ugly_move)
+        return action
 
 
 class RandomPlayer():
