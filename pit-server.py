@@ -16,12 +16,16 @@ use this script to play any two agents against each other, or play manually with
 any agent.
 """
 
+ncp = "saves/save-bc5a3cffa65"                       # Checkpoint path
+ncf = "best.pth.tar"                                 # Checkpoint file
+nca = { 'numMCTSSims': 50, 'cpuct': 1.0, 'temp': 0 } # NNet args
+
 class GameWrapper():
     def __init__(self, sess_id):
-        self.g  = ChessGame()                     # Initialize chess game
-        self.r  = RandomNetworkPlayer(self.g)     # Initialize random player
+        self.g  = ChessGame()                              # Initialize chess game
+        self.r  = NNetNetworkPlayer(self.g, ncp, ncf, nca) # Initialize computer player
         self.rp = self.r.play
-        self.h  = HumanNetworkChessPlayer(self.g) # Initialize human player
+        self.h  = HumanNetworkChessPlayer(self.g)          # Initialize human player
         self.hp = self.h.play
 
         self.sess_id = sess_id
