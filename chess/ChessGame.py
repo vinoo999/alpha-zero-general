@@ -151,7 +151,7 @@ class ChessGame(Game):
 #            print("insufficient_material: " , b.insufficient_material())
 #            print("Half Moves: ", b.half_moves)
 #            print("3=fold rep: ", self.state_counts[str_rep_no_move])
-            return -1e-5
+            return 1e-8
         b.turn = swap_color(b.turn)
         if b.in_checkmate():
             return 1
