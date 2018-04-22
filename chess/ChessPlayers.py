@@ -9,7 +9,9 @@ from queue import Queue
 import math
 from timeit import default_timer as timer
 import time
-
+import os
+from utils import *
+from MCTS import MCTS
 
 class NNetNetworkPlayer():
     def __init__(self, game, ckpt_path, ckpt_file, args):
@@ -461,41 +463,52 @@ class AlphaBetaPlayer():
 
 class EnsemblePlayer():
 
-    def __init__(self, game, networks, example_files):
+    def __init__(self, game, networks, example_file):
         self.game = game
-        self.weights = np.array((len(networks),))
+        print(len(networks))
+        self.weights = np.zeros((len(networks),))
         self.networks = networks
 
         beta = 0.1
         batch_size = 64
 
-        examples = self.loadTrainExamples(examples_file)
-        input_boards, target_pis, target_vs = list(zip(*examples))
+        examples = self.loadTrainExamples(example_file)
+        final_examples = []
+        for e in examples:
+            final_examples.extend(e)
+        input_boards, target_pis, target_vs = list(zip(*final_examples))
         
+        input_boards = np.asarray(input_boards)
+        target_pis = np.asarray(target_pis)
+        target_vs = np.asarray(target_vs)
+
         scores = {}
         num_nets = len(networks)
         for i in range(num_nets):
             network = networks[i]
             loss = network.nnet.model.evaluate(x = input_boards, y = [target_pis, target_vs], batch_size=batch_size, verbose=1)
-            scores[i] = loss
+            scores[i] = loss[0]
+            print("Loss: ", loss)
 
         top_nets = sorted(scores, key=scores.get)
 
         sum_exp_betas = np.sum(np.exp(beta*np.arange(1,num_nets+1)))
 
+        print(self.weights.shape)
         for j in range(num_nets):
             top_net_num = top_nets[j]
+            print(top_net_num)
             self.weights[top_net_num] = np.exp(beta*(num_nets - j))/sum_exp_betas
 
 
     def predict(self, board):
-        return_pi = np.zeros(game.getActionSize())
+        return_pi = np.zeros(self.game.getActionSize())
         return_v = 0
-        for i in range(len(networks)):
-            # preparing input
-            board = board[np.newaxis, :, :]
-
-            pi, v = self.nnet.model.predict(board)
+        
+        board = board[np.newaxis, :, :]
+        for i in range(len(self.networks)):
+            network = self.networks[i]
+            pi, v = network.nnet.model.predict(board)
             return_pi += self.weights[i]*pi[0]
             return_v += self.weights[i]*v[0]
 
@@ -510,12 +523,12 @@ class EnsemblePlayer():
 
     def loadTrainExamples(self, examples_file):
         if not os.path.isfile(examples_file):
-            print(examplesFile)
+            print(examples_file)
             print("File with trainExamples not found.")
             sys.exit()
         else:
             print("File with trainExamples found. Read it.")
-            with open(examplesFile, "rb") as f:
+            with open(examples_file, "rb") as f:
                 return Unpickler(f).load()
 
 
