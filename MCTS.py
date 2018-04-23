@@ -90,7 +90,12 @@ class MCTS():
         if s not in self.Ps:
             # leaf node
             print("predict ...")
-            self.Ps[s], v = self.nnet.predict(canonicalBoard)
+            if self.args.parallel:
+                print("Parallel...")
+                self.nnet.work_queue.put(canonicalBoard)
+                self.Ps[s], v = self.nnet.done_queue.get()
+            else:
+                self.Ps[s], v = self.nnet.predict(canonicalBoard)
             print("predict done.")
             valids = self.game.getValidMoves(canonicalBoard, 1)
             self.Ps[s] = self.Ps[s]*valids      # masking invalid moves

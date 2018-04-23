@@ -42,44 +42,46 @@ class Coach():
         self.trainExamplesHistory = []    # history of examples from args.numItersForTrainExamplesHistory latest iterations
         self.skipFirstSelfPlay = False # can be overriden in loadTrainExamples()
 
-    def executeEpisode(self):
-        """
-        This function executes one episode of self-play, starting with player 1.
-        As the game is played, each turn is added as a training example to
-        trainExamples. The game is played till the game ends. After the game
-        ends, the outcome of the game is used to assign values to each example
-        in trainExamples.
 
-        It uses a temp=1 if episodeStep < tempThreshold, and thereafter
-        uses temp=0.
+    # DEPRICATED -- use mcts_worker instead
+    # def executeEpisode(self):
+    #     """
+    #     This function executes one episode of self-play, starting with player 1.
+    #     As the game is played, each turn is added as a training example to
+    #     trainExamples. The game is played till the game ends. After the game
+    #     ends, the outcome of the game is used to assign values to each example
+    #     in trainExamples.
 
-        Returns:
-            trainExamples: a list of examples of the form (canonicalBoard,pi,v)
-                           pi is the MCTS informed policy vector, v is +1 if
-                           the player eventually won the game, else -1.
-        """
-        trainExamples = []
-        board = self.game.getInitBoard()
-        self.curPlayer = 1
-        episodeStep = 0
+    #     It uses a temp=1 if episodeStep < tempThreshold, and thereafter
+    #     uses temp=0.
 
-        while True:
-            episodeStep += 1
-            canonicalBoard = self.game.getCanonicalForm(board,self.curPlayer)
-            temp = int(episodeStep < self.args.tempThreshold)
-            pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
-            sym = self.game.getSymmetries(canonicalBoard, pi)
-            for b,p in sym:
-                trainExamples.append([b, self.curPlayer, p, None])
+    #     Returns:
+    #         trainExamples: a list of examples of the form (canonicalBoard,pi,v)
+    #                        pi is the MCTS informed policy vector, v is +1 if
+    #                        the player eventually won the game, else -1.
+    #     """
+    #     trainExamples = []
+    #     board = self.game.getInitBoard()
+    #     self.curPlayer = 1
+    #     episodeStep = 0
 
-            action = np.random.choice(len(pi), p=pi)
+    #     while True:
+    #         episodeStep += 1
+    #         canonicalBoard = self.game.getCanonicalForm(board,self.curPlayer)
+    #         temp = int(episodeStep < self.args.tempThreshold)
+    #         pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
+    #         sym = self.game.getSymmetries(canonicalBoard, pi)
+    #         for b,p in sym:
+    #             trainExamples.append([b, self.curPlayer, p, None])
+
+    #         action = np.random.choice(len(pi), p=pi)
             
-            board, self.curPlayer = self.game.getNextState(board, self.curPlayer, action)
+    #         board, self.curPlayer = self.game.getNextState(board, self.curPlayer, action)
 
-            r = self.game.getGameEnded(board, self.curPlayer)
+    #         r = self.game.getGameEnded(board, self.curPlayer)
 
-            if r!=0:
-                return [(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples]
+    #         if r!=0:
+    #             return [(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples]
 
 
     def mcts_worker(self, in_queue, out_queue, bar, eps_time, lock, num, num_eps):
@@ -98,11 +100,11 @@ class Coach():
             print("[Worker " + str(num) + "] Got work! Running MCTS simulation...")
             i = work["i"]
             game = work["game"]
-            # nnet = work["nnet"]
+            nnet = work["nnet"]
             # args = work["args"]
 
             # Create our MCTS instance
-            mcts = MCTS(game, self.nnet, self.args)
+            mcts = MCTS(game, nnet, self.args)
 
             # Start "executeEpisode()"
             trainExamples = []
@@ -167,7 +169,7 @@ class Coach():
                 print("[Worker " + str(num) + "] Game iteration done.")
 
 
-    def learn(self):
+    def learn(self, nnq):
         """
         Performs numIters iterations with numEps episodes of self-play in each
         iteration. After every iteration, it retrains neural network with
@@ -194,7 +196,7 @@ class Coach():
                 done_queue = mp.Queue()
 
                 # Spawn workers
-                for i in range(1):
+                for i in range(self.args.max_threads):
                     tup = (work_queue, done_queue, bar, eps_time, lock, i, self.args.numEps)
                     proc = mp.Process(target=self.mcts_worker, args=tup)
                     proc.start()
@@ -207,7 +209,7 @@ class Coach():
                     data = dict()
                     data["i"] = eps
                     data["game"] = copy.deepcopy(self.game)
-                    # data["nnet"] = self.nnet
+                    data["nnet"] = nnq
                     # data["args"] = self.args
 
                     # Workaround for mp.queue bug (it's actually an issue with pickler which it uses)
