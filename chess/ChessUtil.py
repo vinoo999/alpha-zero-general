@@ -275,22 +275,12 @@ def evaluate_board(mcts_board, player):
             sign = -1 if board[i,j] < 0 else 1
             #print("sign: " + str(sign))
             val += get_piece_value(piece, i, j, sign)
-            # print("piece val: " + str(get_piece_value(piece,i,j, sign)))
+            # print("piece is: " +str(piece) + ". piece val: " + str(get_piece_value(piece,i,j, sign)))
             # print("i="+str(i)+", j=" +str(j) + " total val is: " + str(val))
     # print("")
     # print("EVAL BOARD-------------------------------------")
     # print("PLayer is: " + str(player))
     # print("FINAL VAL: " + str(val))
-
-    # print("EVAL BOARD-------------------------------------")
-
-    # if(val >= 5.5):
-    #     print("WHOAAAAA VALUE IS:------------------------------------------------ " + str(val))
-    #     sys.exit()
-    # else:
-    #     print("HOLY FUCKING SHIT a leaf node was actually not a 5.5, this means we're setting it to 5.5 somewhere in the recursion! ")
-    #     sys.exit()
-    
 
 
     return val
@@ -316,11 +306,34 @@ def get_piece_value(piece, i, j, color):
 
     eval_matrix = eval_map[piece]
 
+
+
+
+    #Multiply the piece's intrinsic value by it's position on it's specific EVAL board
     if color > 0:
-        return eval_offset[piece] + eval_matrix[j][i]
+        # print("\n-----------------Inside get_piece_value----------------")
+        # print("piece: " + str(piece) + " at i="+str(i) + ", j="+str(j))
+        # print("eval_offset[piece]: "+ str(eval_offset[piece]))
+        # print("eval_matrix[j][i]: " + str(eval_matrix[j][i]))
+        # print("returned: " + str(eval_offset[piece] + eval_matrix[j][i]))
+        # print("-----------------Inside get_piece_value----------------\n")
+
+        value = eval_offset[piece] + eval_matrix[i][j]
+        #return eval_offset[piece] + eval_matrix[j][i]
     else:
         #Reverse the eval matrix for the opposite color
-        return color*(eval_offset[piece] + eval_matrix[::-1][j][i])
+        #return color*(eval_offset[piece] + eval_matrix[::-1][j][i])
+        if piece == 'q' or piece == 'n':
+            value = color*(eval_offset[piece] + eval_matrix[i][j])
+        else:
+            value = color*(eval_offset[piece] + eval_matrix[::-1][i][j])
+
+    # print("\n-----------------Inside get_piece_value----------------")
+    # print("piece: " + str(piece) + " at i="+str(i) + ", j="+str(j))
+    # print("color: "+str(color))
+
+    # print("Value is: " + str(value))
+    return value
 
 
 def trim(str):
