@@ -49,10 +49,11 @@ class NNetWrapper(NeuralNet):
         board = board[np.newaxis, :, :]
 
         # run
-        pi, v = self.nnet.model.predict(board)
+        with self.nnet.graph.as_default():
+            pi, v = self.nnet.model.predict(board)
 
-        #print('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
-        return pi[0], v[0]
+            #print('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
+            return pi[0], v[0]
 
     def save_checkpoint(self, folder='checkpoint', filename='checkpoint.pth.tar'):
         filepath = os.path.join(folder, filename)
