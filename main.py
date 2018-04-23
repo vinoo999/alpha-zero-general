@@ -3,6 +3,8 @@ from chess.ChessGame import ChessGame as Game
 from chess.keras.NNet import NNetWrapper as nn
 from utils import *
 
+import multiprocessing as mp
+
 args = dotdict({
     'numIters': 5,
     'numEps': 100,
@@ -13,6 +15,8 @@ args = dotdict({
     'arenaCompare': 40,
     'cpuct': 1,
 
+    'max_threads': 2,
+
     'checkpoint': './temp/',
     'load_model': False,
     'load_folder_file': ('/dev/models/8x100x50','best.pth.tar'),
@@ -21,6 +25,8 @@ args = dotdict({
 })
 
 if __name__=="__main__":
+    #mp.set_start_method('spawn')
+
     g = Game()
     nnet = nn(g)
 

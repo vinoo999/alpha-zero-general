@@ -3,12 +3,30 @@ from Arena import Arena
 from MCTS import MCTS
 import numpy as np
 from pytorch_classification.utils import Bar, AverageMeter
+from chess.keras.NNet import NNetWrapper as nn
 import time, os, sys
 from pickle import Pickler, Unpickler
 from random import shuffle
 from chess.ChessUtil import decode_move
 from chess.ChessGame import display
+from queue import Queue
+import multiprocessing as mp
 import copy
+
+class pickler_dict():
+    def __init__(self, d):
+        self.d = d
+
+    def __getattr__(self, name):
+        # assert hasattr(self, '_data')
+        return self.d[name]
+
+    def __getstate__(self):
+        return self.d
+
+    # def __setstate__(self, tmp):
+    #     self.d = tmp
+
 
 class Coach():
     """
@@ -63,6 +81,92 @@ class Coach():
             if r!=0:
                 return [(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples]
 
+
+    def mcts_worker(self, in_queue, out_queue, bar, eps_time, lock, num, num_eps):
+        """
+        Localized version of learn() and executeEpisode() that is thread-safe. Args
+        game, nnet, and args should be their own localized copies. This function may
+        mutate these objects.
+        """
+
+        print("[Worker " + str(num) + "] Started!")
+
+        # Grab work from queue and decode the work data
+        while True:
+            print("[Worker " + str(num) + "] Waiting for work...")
+            work = in_queue.get()
+            print("[Worker " + str(num) + "] Got work! Running MCTS simulation...")
+            i = work["i"]
+            game = work["game"]
+            # nnet = work["nnet"]
+            # args = work["args"]
+
+            # Create our MCTS instance
+            mcts = MCTS(game, self.nnet, self.args)
+
+            # Start "executeEpisode()"
+            trainExamples = []
+            board = game.getInitBoard()
+            curPlayer = 1
+            episodeStep = 0
+
+            print("[Worker " + str(num) + "] Starting game...")
+
+            while True:
+                print("[Worker " + str(num) + "] Game iteration...")
+                episodeStep += 1
+
+                print("[Worker " + str(num) + "] Getting canonical board...")
+
+                canonicalBoard = game.getCanonicalForm(board, curPlayer)
+
+                print("[Worker " + str(num) + "] Getting action prob...")
+
+                temp = int(episodeStep < self.args.tempThreshold)
+                pi = mcts.getActionProb(canonicalBoard, temp=temp)
+
+                print("[Worker " + str(num) + "] Getting symmetries...")
+
+                sym = game.getSymmetries(canonicalBoard, pi)
+                for b, p in sym:
+                    trainExamples.append([b, curPlayer, p, None])
+
+                print("[Worker " + str(num) + "] Next.")
+
+                action = np.random.choice(len(pi), p=pi)
+                board, curPlayer = game.getNextState(board, curPlayer, action)
+                res = game.getGameEnded(board, curPlayer)
+
+                print("[Worker " + str(num) + "] Next..")
+
+                if res != 0:
+                    print("[Worker " + str(num) + "] Game done!")
+                    out_queue.put([(x[0], x[2], r * ((-1) ** (x[1] != curPlayer))) for x in trainExamples])
+
+                    print("[Worker " + str(num) + "] Aquiring lock...")
+
+                    # Grab lock and update bar
+                    lock.aquire()
+
+                    print("[Worker " + str(num) + "] Obtained lock!")
+
+                    eps_time.update(time.time() - end)
+                    end = time.time()
+                    bar.suffix = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(
+                                  eps=work["i"], maxeps=num_eps, et=eps_time.avg, total=bar.elapsed_td, eta=bar.eta_td)
+                    bar.next()
+
+                    print("[Worker " + str(num) + "] Releasing lock...")
+
+                    lock.release()
+
+                    print("[Worker " + str(num) + "] Done!")
+
+                    break
+
+                print("[Worker " + str(num) + "] Game iteration done.")
+
+
     def learn(self):
         """
         Performs numIters iterations with numEps episodes of self-play in each
@@ -83,21 +187,53 @@ class Coach():
                 bar = Bar('Self Play', max=self.args.numEps)
                 end = time.time()
     
+                # Multiprocess self-play
+                proccesses = []
+                lock = mp.Lock()
+                work_queue = mp.Queue()
+                done_queue = mp.Queue()
+
+                # Spawn workers
+                for i in range(1):
+                    tup = (work_queue, done_queue, bar, eps_time, lock, i, self.args.numEps)
+                    proc = mp.Process(target=self.mcts_worker, args=tup)
+                    proc.start()
+
+                    proccesses.append(proc)
+
+                # Add work to queue
                 for eps in range(self.args.numEps):
-                    # TODO: Parallelize executeEpisode() calls
-                    self.mcts = MCTS(copy.deepcopy(self.game), self.nnet, self.args)   # reset search tree
-                    iterationTrainExamples += self.executeEpisode()
-    
-                    # bookkeeping + plot progress
-                    eps_time.update(time.time() - end)
-                    end = time.time()
-                    bar.suffix  = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(eps=eps+1, maxeps=self.args.numEps, et=eps_time.avg,
-                                                                                                               total=bar.elapsed_td, eta=bar.eta_td)
-                    bar.next()
+                    # print("[Master] Adding work...")
+                    data = dict()
+                    data["i"] = eps
+                    data["game"] = copy.deepcopy(self.game)
+                    # data["nnet"] = self.nnet
+                    # data["args"] = self.args
+
+                    # Workaround for mp.queue bug (it's actually an issue with pickler which it uses)
+                    work_queue.put(data)
+
+                print("[Master] Waiting for results...")
+
+                # Wait for results to come in
+                for i in range(self.args.numEps):
+                    iterationTrainExamples += done_queue.get()
+
+                print("[Master] Killing workers...")
+
+                # Kill workers
+                for p in proccesses:
+                    p.terminate()
+                    p.join()
+
                 bar.finish()
 
+                # TODO: Parallelize executeEpisode() calls
+                # self.mcts = MCTS(copy.deepcopy(self.game), self.nnet, self.args)   # reset search tree
+                # iterationTrainExamples += self.executeEpisode()
+
                 # save the iteration examples to the history 
-                self.trainExamplesHistory.append(iterationTrainExamples)
+                #self.trainExamplesHistory.append(iterationTrainExamples)
                 
             if len(self.trainExamplesHistory) > self.args.numItersForTrainExamplesHistory:
                 print("len(trainExamplesHistory) =", len(self.trainExamplesHistory), " => remove the oldest trainExamples")
