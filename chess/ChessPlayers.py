@@ -285,7 +285,7 @@ class AlphaBetaPlayer():
         best_move = None
 
         best_moves_scores = [-infinity, -infinity, -infinity]
-        best_moves = [0, 0, 0]
+        best_moves = [None, None, None]
 
         print("start timer")
         start = timer()
@@ -299,7 +299,7 @@ class AlphaBetaPlayer():
             new_game_move = new_game_moves[i]
 
             #Create a board copy so that we dont affect the root
-            board_copy = copy.deepcopy(board)
+            board_copy = board#copy.deepcopy(board)
 
             #Apply the move to the starting board to generate a new board (get next state is tuple holding board and count)
             new_board_state = self.game.getNextState(board_copy, player, new_game_move)[0]
@@ -322,7 +322,10 @@ class AlphaBetaPlayer():
             #print("i: "+str(i)+ ", move: "+str(decode_move(new_game_move))+", value: " +str(value))
             #print("------------------------------------------")
 
-
+            if value == 5:
+                print("")
+                print("VALUE IS 5================================================")
+                print(decode_move(new_game_move))
 
             legal_moves_values[i] = value
 
@@ -351,6 +354,11 @@ class AlphaBetaPlayer():
         print("COLOR: {} \nBEST MOVES: {} \n SCORES {} \n DECISION: {} \n DECISION SCORE: {}".format(player, list(map(decode_move, best_moves)), best_moves_scores, decode_move(best_move), best_move_score))
         print("Legal move values: ")
         print(legal_moves_values)
+
+        # for i in range(len(legal_moves_values)):
+        #     if legal_moves_values[i] == 5:
+        #         print(decode_move())
+
         print("")
         print("Legal moves sorted: ")
         print(np.sort(legal_moves_values))
@@ -371,7 +379,12 @@ class AlphaBetaPlayer():
         #Base case where we've reached the max depth to explore
         if depth == 0:
             #Returning score to player "above" in the min-max player tree. So should be opposite sign.
+            #Negate the score if it's the opposite player
+            #print("Player: " + str(player))
+            #print("AT DEPTH 0: Score: "+str(player * self.game.getScore(board, player)))
             return self.game.getScore(board, player)
+
+
 
         #Get all available moves stemming from the passed board state
         new_game_moves = self.game.getValidMoves(board, player)
@@ -392,8 +405,8 @@ class AlphaBetaPlayer():
             for i in range(len(new_game_moves)):
 
                 new_game_move = new_game_moves[i]
-                board_copy = copy.deepcopy(board)
-                tmp_game = copy.deepcopy(self.game)
+                board_copy = board#copy.deepcopy(board)
+                tmp_game = self.game#copy.deepcopy(self.game)
                 new_board_state = tmp_game.getNextState(board_copy, player, new_game_move)[0]
 
                 best_move_score = max(best_move_score, self.minimax(depth - 1, new_board_state, tmp_game, -infinity, infinity, 1-player, not is_maximising_player))
@@ -423,8 +436,8 @@ class AlphaBetaPlayer():
 
                 new_game_move = new_game_moves[i]
 
-                board_copy = copy.deepcopy(board)
-                tmp_game = copy.deepcopy(self.game)
+                board_copy = board#copy.deepcopy(board)
+                tmp_game = self.game#copy.deepcopy(self.game)
 
                 new_board_state = tmp_game.getNextState(board_copy, player, new_game_move)[0]
 
