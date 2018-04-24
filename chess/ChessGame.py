@@ -143,17 +143,28 @@ class ChessGame(Game):
         #print("Num count: {}".format(self.state_counts[str_rep_no_move]))
         #print('**********************************************************************')
         
+        # print("player in: " + str(player))
+        # print("player: " +str(no_move_board[8,2]))
+
+
         # print("Num count: ", self.state_counts[str_rep_no_move])
         if b.in_checkmate():
-            return -1
+            current_player = no_move_board[8,2]
+            print("player in checkmate: "+str(current_player))
+            return -1#current_player#-1 #if current_player == player else 1#-1
+
         if b.in_stalemate() or b.insufficient_material() or b.half_moves >= 50 or self.state_counts[str_rep_no_move] >= 3:
-#            print("Stalemate: ", b.in_stalemate())
-#            print("insufficient_material: " , b.insufficient_material())
-#            print("Half Moves: ", b.half_moves)
-#            print("3=fold rep: ", self.state_counts[str_rep_no_move])
+            print("Stalemate: ", b.in_stalemate())
+            print("insufficient_material: " , b.insufficient_material())
+            print("Half Moves: ", b.half_moves)
+            print("3=fold rep: ", self.state_counts[str_rep_no_move])
+            print("----------------------GAME TIE-------------------------")
             return 1e-8
+
         b.turn = swap_color(b.turn)
         if b.in_checkmate():
+            print("player who checkmated: "+str(player))
+
             return 1
         
         return 0
@@ -175,10 +186,10 @@ class ChessGame(Game):
         new_board = copy.deepcopy(board)
         new_board[8,6] = 0
         new_board[8,7] = 0
-        return board.tostring()
+        return new_board.tostring()
 
     def getScore(self, board, player):
-        b = Board(mcts_board=board)
+        #b = Board(mcts_board=board)
         return evaluate_board(board, player)
 
 def display(board):
