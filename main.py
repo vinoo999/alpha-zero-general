@@ -28,40 +28,44 @@ args = dotdict({
 
 class NNetQueue():
     def __init__(self, work_queue, done_queue, lock):
+        """
+        Convenience class for NNetWorker
+        """
         self.work_queue = work_queue
         self.done_queue = done_queue
         self.lock = lock
 
+
 def NNetWorker(g, q): 
+    """
+    Workaround for multiprocessing errors when using Queue. Have to
+    have queue passed from parent to child process in order for everything
+    to work. Also there can only be one NNet, so multiple mcts_worker 
+    threads must share this NNet.
+    """
     nnet = nn(g)
 
     work_queue = q.work_queue
     done_queue = q.done_queue
 
     while True:
-        # print("[NNet Worker] Waiting for work...")
-
         work = work_queue.get()
 
         if work["instruction"] == "predict":
-            # print("[NNet Worker] Got predict! Working...")
             res = nnet.predict(work["board"])
 
         elif work["instruction"] == "save":
-            # print("[NNet Worker] Got save_checkpoint! Working...")
-            self.nnet.save_checkpoint(folder=work["folder"], filename=work["filename"])
+            nnet.save_checkpoint(folder=work["folder"], filename=work["filename"])
             res = "OK"
 
         elif work["instruction"] == "load":
-            # print("[NNet Worker] Got load_checkpoint! Working...")
-            self.nnet.load_checkpoint(folder=work["folder"], filename=work["filename"])
+            nnet.load_checkpoint(folder=work["folder"], filename=work["filename"])
             res = "OK"
 
         elif work["instruction"] == "train":
-            self.nnet.train(work["examples"])
+            nnet.train(work["examples"])
             res = "OK"
 
-        # print("[NNet Worker] Done with work! Sending results...")
         done_queue.put(res)
 
 
