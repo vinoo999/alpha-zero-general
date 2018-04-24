@@ -36,7 +36,7 @@ class Coach():
     def __init__(self, game, nnet, args):
         self.game = game
         self.nnet = nnet
-        # self.pnet = self.nnet.__class__(self.game)  # the competitor network
+        self.pnet = nn(self.game)  # the competitor network
         self.args = args
         self.mcts = MCTS(self.game, self.nnet, self.args)
         self.trainExamplesHistory = []    # history of examples from args.numItersForTrainExamplesHistory latest iterations
@@ -194,12 +194,6 @@ class Coach():
 
                 bar.finish()
 
-                # TODO: Parallelize executeEpisode() calls
-                # self.mcts = MCTS(copy.deepcopy(self.game), self.nnet, self.args)   # reset search tree
-                # iterationTrainExamples += self.executeEpisode()
-
-                # save the iteration examples to the history 
-                #self.trainExamplesHistory.append(iterationTrainExamples)
                 
             if len(self.trainExamplesHistory) > self.args.numItersForTrainExamplesHistory:
                 print("len(trainExamplesHistory) =", len(self.trainExamplesHistory), " => remove the oldest trainExamples")
@@ -215,11 +209,37 @@ class Coach():
             shuffle(trainExamples)
 
             # training new network, keeping a copy of the old one
-            # self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
-            # self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
-            pmcts = MCTS(copy.deepcopy(self.game), self.pnet, self.args)
+            if self.args.parallel:
+                work = dict()
+                work["instruction"] = "save"
+                work["folder"] = self.args.checkpoint
+                work["filename"] = "temp.pth.tar"
+
+                self.nnet.lock.acquire()
+                self.nnet.work_queue.put(work)
+                self.nnet.done_queue.get()
+                self.nnet.lock.release()
+            else:
+                self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
+
+            # normal network, don't use parallel code
+            self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
+            pnet_args = copy.deepcopy(self.args)
+            pnet_args["parallel"] = False
+            pmcts = MCTS(copy.deepcopy(self.game), self.pnet, pnet_args)
             
-            # self.nnet.train(trainExamples)
+            if self.args.parallel:
+                work = dict()
+                work["instruction"] = "train"
+                work["examples"] = trainExamples
+
+                self.nnet.lock.acquire()
+                self.nnet.work_queue.put(work)
+                self.nnet.done_queue.get()
+                self.nnet.lock.release()
+            else:
+                self.nnet.train(trainExamples)
+
             nmcts = MCTS(copy.deepcopy(self.game), self.nnet, self.args)
 
             print('PITTING AGAINST PREVIOUS VERSION')
@@ -230,11 +250,44 @@ class Coach():
             print('NEW/PREV WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
             if pwins+nwins > 0 and float(nwins)/(pwins+nwins) < self.args.updateThreshold:
                 print('REJECTING NEW MODEL')
-                # self.nnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
+                if self.args.parallel:
+                    work = dict()
+                    work["instruction"] = "load"
+                    work["folder"] = self.args.checkpoint
+                    work["filename"] = "temp.pth.tar"
+
+                    self.nnet.lock.acquire()
+                    self.nnet.work_queue.put(work)
+                    self.nnet.done_queue.get()
+                    self.nnet.lock.release()
+                else:
+                    self.nnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
+
             else:
                 print('ACCEPTING NEW MODEL')
                 # self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
-                # self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')                
+                # self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
+                if self.args.parallel:
+                    work1 = dict()
+                    work1["instruction"] = "save"
+                    work1["folder"] = self.args.checkpoint
+                    work1["filename"] = self.getCheckpointFile(i)
+
+                    work2 = dict()
+                    work2["instruction"] = "save"
+                    work2["folder"] = self.args.checkpoint
+                    work2["filename"] = "best.pth.tar"
+
+                    self.nnet.lock.acquire()
+                    self.nnet.work_queue.put(work1)
+                    self.nnet.work_queue.put(work2)
+                    self.nnet.done_queue.get()
+                    self.nnet.done_queue.get()
+                    self.nnet.lock.release()
+                else:
+                    self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
+                    self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
+
 
     def getCheckpointFile(self, iteration):
         return 'checkpoint_' + str(iteration) + '.pth.tar'

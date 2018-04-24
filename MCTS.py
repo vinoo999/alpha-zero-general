@@ -89,8 +89,14 @@ class MCTS():
             # print("predict ...")
             if self.args.parallel:
                 # print("Parallel...")
-                self.nnet.work_queue.put(canonicalBoard)
+                work = dict()
+                work["instruction"] = "predict"
+                work["board"] = canonicalBoard
+
+                self.nnet.lock.acquire()
+                self.nnet.work_queue.put(work)
                 self.Ps[s], v = self.nnet.done_queue.get()
+                self.nnet.lock.release()
             else:
                 # print("NOT Parallel!")
                 self.Ps[s], v = self.nnet.predict(canonicalBoard)
