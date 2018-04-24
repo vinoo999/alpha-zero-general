@@ -91,6 +91,8 @@ class Coach():
         mutate these objects.
         """
 
+        print("[Worker " + str(i) + "] Started!")
+
         # Grab work from queue and decode the work data
         while True:
             work = in_queue.get()
@@ -163,14 +165,10 @@ class Coach():
 
                 # Add work to queue
                 for eps in range(self.args.numEps):
-                    # print("[Master] Adding work...")
                     data = dict()
                     data["i"] = eps
                     data["game"] = copy.deepcopy(self.game)
-                    # data["nnet"] = nnq
-                    # data["args"] = self.args
 
-                    # Workaround for mp.queue bug (it's actually an issue with pickler which it uses)
                     work_queue.put(data)
 
                 print("[Master] Waiting for results...")
