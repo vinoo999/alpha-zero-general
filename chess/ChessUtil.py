@@ -323,43 +323,41 @@ def make_pretty(chess, ugly_move):
 
 
 def evaluate_board(mcts_board, player):
+    """Calculate the total score for board state from a given player's point of view"""
+
     board = mcts_board[0:8,:]
-    #print("evaluate the board for player: " + str(player))
 
     val = 0
     for row in range(8):
         for col in range(8):
             piece_key = abs(board[row,col])
 
-
             #print("--------------------------------------------")
-
             #print(str('abcdefgh'[col]) +", "+ str('87654321'[row]))
-            #
             #print("piece_key: " + str(piece_key))
 
+            #Ignore all positions on the board without a piece
             if(piece_key == 0):
-                #input("skipping, continue?")
                 continue
 
-
-
+            #Grab the letter representation of the piece with it's key
             piece = MCTS_DECODER[piece_key]
+
+            #Save the player that the piece belonged to
             piece_color = -1 if board[row,col] < 0 else 1
 
+            #Get abs value of piece; mult by (piece_color * player) to determine if + or - for overall score
             single_piece_val = get_piece_value(piece, row, col, piece_color) * piece_color * player
+
+            #Aggregate total score for the board
             val += single_piece_val
-
-
 
     return val    
 
-def get_piece_value(piece, i, j, piece_color):
-    """
-    Just get raw value of the pieces, flip the board if neccessary.
-    Apply negatives depending on whos the primary player in the above function.
 
-    """
+
+def get_piece_value(piece, i, j, piece_color):
+    """Return absolute value of the pieces."""
 
     eval_map = {
         'p' : PAWN_EVAL,
@@ -381,60 +379,21 @@ def get_piece_value(piece, i, j, piece_color):
 
     eval_matrix = eval_map[piece]
 
-    #It's the pos (white) player, keep normal eval board orientation
+    #If it's the 1st (pos) player, keep normal eval_board orientation
     if piece_color > 0:
         value = eval_offset[piece] + eval_matrix[i][j]
 
-    #It's the neg (black) player, flip all eval boards besides symmetric ones (q, n)
+    #It's the 2nd (neg) player, flip all eval boards besides the symmetric ones (q, n)
     else:
         if piece == 'q' or piece == 'n':
-            #value = color*(eval_offset[piece] + eval_matrix[i][j])
             value = (eval_offset[piece] + eval_matrix[i][j])
-            #print("eval_matrix[i][j]: " + str(eval_matrix[i][j]))
 
         else:
-            #print("eval_matrix[::-1][i][j]: " + str(eval_matrix[::-1][i][j]))
-            #value = color*(eval_offset[piece] + eval_matrix[::-1][i][j])
             value = (eval_offset[piece] + eval_matrix[::-1][i][j])
 
-
-
-
-    #print("Value: " + str(value))
-    #input("contni...")
-
-
-
-
-
-    # #Multiply the piece's intrinsic value by it's position on it's specific EVAL board
-    # if color > 0:
-    #     # print("\n-----------------Inside get_piece_value----------------")
-    #     # print("piece: " + str(piece) + " at i="+str(i) + ", j="+str(j))
-    #     # print("eval_offset[piece]: "+ str(eval_offset[piece]))
-    #     # print("eval_matrix[j][i]: " + str(eval_matrix[j][i]))
-    #     # print("returned: " + str(eval_offset[piece] + eval_matrix[j][i]))
-    #     # print("-----------------Inside get_piece_value----------------\n")
-
-    #     value = eval_offset[piece] + eval_matrix[i][j]
-    # else:
-    #     #Reverse the eval matrix for the opposite color (except for symmetric q and n)
-    #     if piece == 'q' or piece == 'n':
-    #         value = (eval_offset[piece] + eval_matrix[i][j])
-    #         #value = color*(eval_offset[piece] + eval_matrix[i][j])
-    #     else:
-    #         value = (eval_offset[piece] + eval_matrix[::-1][i][j])
-
-    #         #value = color*(eval_offset[piece] + eval_matrix[::-1][i][j])
-
-
-
-    # print("\n-----------------Inside get_piece_value----------------")
-    # print("piece: " + str(piece) + " at i="+str(i) + ", j="+str(j))
-    # print("color: "+str(color))
-
-    #print("Value is: " + str(value))
     return value
+
+
 
 
 def trim(str):
