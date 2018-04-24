@@ -58,7 +58,6 @@ class Arena():
             print("Game over: Turn ", str(it), "Result ", str(self.game.getGameEnded(board, 1)))
             self.display(board)
         #Print the ending board state
-        self.display(board)
         return self.game.getGameEnded(board, 1)*curPlayer
 
     def playGames(self, num, verbose=False):

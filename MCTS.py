@@ -40,6 +40,13 @@ class MCTS():
 
         s = self.game.stringRepresentation(canonicalBoard)
         counts = [self.Nsa[(s,a)] if (s,a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
+        #print("**********************************")
+        #x= list(np.where(np.array(counts) > 0)[0])
+        #tmp_map = map(decode_move, x)
+        #print(list(tmp_map))
+        #print([counts[d] for d in x])
+
+        #print("##################################")
         if temp==0:
             bestA = np.argmax(counts)
             probs = [0]*len(counts)
@@ -75,6 +82,9 @@ class MCTS():
 
         game_end_score = self.game.getGameEnded(canonicalBoard, 1)
         if game_end_score != 0:
+            #print("******************************************************************")
+            #print("Game ENd: ", game_end_score)
+            #print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
             return game_end_score
         #if s not in self.Es:
         #    self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
