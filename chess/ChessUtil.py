@@ -3,6 +3,7 @@ import copy
 from .ChessConstants import *
 import sys
 
+
 # /*****************************************************************************
  # * UTILITY FUNCTIONS
  # ****************************************************************************/
@@ -259,33 +260,107 @@ def make_pretty(chess, ugly_move):
 
     return move
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# def evaluate_board_old(mcts_board, b, player):
+#     board = mcts_board[0:8,:]
+#     #print("evaluate the board for player: " + str(player))
+
+#     val = 0
+#     for row in range(8):
+#         for col in range(8):
+#             piece_key = abs(board[row,col])
+#             print("--------------------------------------------")
+#             print(str('abcdefgh'[col]) +", "+ str('87654321'[row]))
+#             sign = -1 if board[row,col] < 0 else 1
+#             piece = MCTS_DECODER[piece_key]
+#             print("piece_key: " + str(piece_key)+", piece: " + str(piece))
+#             print("value here: " + str(get_piece_value(piece, row, col, sign)))
+#             print("--------------------------------------------")
+#             if(piece_key == 0):
+#                 continue
+#             piece = MCTS_DECODER[piece_key]
+#             #print("piece: " + str(piece))
+#             sign = -1 if board[row,col] < 0 else 1
+#             #print("sign: " + str(sign))
+#             val += get_piece_value(piece, row, col, sign)
+
+#             #print("piece is: " +str(piece) + ". piece val: " + str(get_piece_value(piece,row,col, sign)))
+#             #print(str('abcdefgh'[col]) +", "+ str('87654321'[row])+ ": total val is = " + str(val))
+#             #input("continue?")
+
+#     print("")
+#     print("EVAL BOARD-------------------------------------")
+#     print("PLayer is: " + str(player))
+#     print("FINAL VAL: " + str(val))
+#     print()
+#     input("continue?")
+
+
+#     return val
+
+
+
+
+
+
+
 def evaluate_board(mcts_board, player):
     board = mcts_board[0:8,:]
     #print("evaluate the board for player: " + str(player))
 
     val = 0
-    for i in range(8):
-        for j in range(8):
-            piece_key = abs(board[i,j])
+    for row in range(8):
+        for col in range(8):
+            piece_key = abs(board[row,col])
+
+
+            #print("--------------------------------------------")
+
+            #print(str('abcdefgh'[col]) +", "+ str('87654321'[row]))
+            #
             #print("piece_key: " + str(piece_key))
+
             if(piece_key == 0):
+                #input("skipping, continue?")
                 continue
+
+
+
             piece = MCTS_DECODER[piece_key]
-            #print("piece: " + str(piece))
-            sign = -1 if board[i,j] < 0 else 1
-            #print("sign: " + str(sign))
-            val += get_piece_value(piece, i, j, sign)
-            # print("piece is: " +str(piece) + ". piece val: " + str(get_piece_value(piece,i,j, sign)))
-            # print("i="+str(i)+", j=" +str(j) + " total val is: " + str(val))
-    # print("")
-    # print("EVAL BOARD-------------------------------------")
-    # print("PLayer is: " + str(player))
-    # print("FINAL VAL: " + str(val))
+            piece_color = -1 if board[row,col] < 0 else 1
+
+            single_piece_val = get_piece_value(piece, row, col, piece_color) * piece_color * player
+            val += single_piece_val
 
 
-    return val
 
-def get_piece_value(piece, i, j, color):
+    return val    
+
+def get_piece_value(piece, i, j, piece_color):
+    """
+    Just get raw value of the pieces, flip the board if neccessary.
+    Apply negatives depending on whos the primary player in the above function.
+
+    """
+
     eval_map = {
         'p' : PAWN_EVAL,
         'n' : KNIGHT_EVAL,
@@ -306,33 +381,59 @@ def get_piece_value(piece, i, j, color):
 
     eval_matrix = eval_map[piece]
 
-
-
-
-    #Multiply the piece's intrinsic value by it's position on it's specific EVAL board
-    if color > 0:
-        # print("\n-----------------Inside get_piece_value----------------")
-        # print("piece: " + str(piece) + " at i="+str(i) + ", j="+str(j))
-        # print("eval_offset[piece]: "+ str(eval_offset[piece]))
-        # print("eval_matrix[j][i]: " + str(eval_matrix[j][i]))
-        # print("returned: " + str(eval_offset[piece] + eval_matrix[j][i]))
-        # print("-----------------Inside get_piece_value----------------\n")
-
+    #It's the pos (white) player, keep normal eval board orientation
+    if piece_color > 0:
         value = eval_offset[piece] + eval_matrix[i][j]
-        #return eval_offset[piece] + eval_matrix[j][i]
+
+    #It's the neg (black) player, flip all eval boards besides symmetric ones (q, n)
     else:
-        #Reverse the eval matrix for the opposite color
-        #return color*(eval_offset[piece] + eval_matrix[::-1][j][i])
         if piece == 'q' or piece == 'n':
-            value = color*(eval_offset[piece] + eval_matrix[i][j])
+            #value = color*(eval_offset[piece] + eval_matrix[i][j])
+            value = (eval_offset[piece] + eval_matrix[i][j])
+            #print("eval_matrix[i][j]: " + str(eval_matrix[i][j]))
+
         else:
-            value = color*(eval_offset[piece] + eval_matrix[::-1][i][j])
+            #print("eval_matrix[::-1][i][j]: " + str(eval_matrix[::-1][i][j]))
+            #value = color*(eval_offset[piece] + eval_matrix[::-1][i][j])
+            value = (eval_offset[piece] + eval_matrix[::-1][i][j])
+
+
+
+
+    #print("Value: " + str(value))
+    #input("contni...")
+
+
+
+
+
+    # #Multiply the piece's intrinsic value by it's position on it's specific EVAL board
+    # if color > 0:
+    #     # print("\n-----------------Inside get_piece_value----------------")
+    #     # print("piece: " + str(piece) + " at i="+str(i) + ", j="+str(j))
+    #     # print("eval_offset[piece]: "+ str(eval_offset[piece]))
+    #     # print("eval_matrix[j][i]: " + str(eval_matrix[j][i]))
+    #     # print("returned: " + str(eval_offset[piece] + eval_matrix[j][i]))
+    #     # print("-----------------Inside get_piece_value----------------\n")
+
+    #     value = eval_offset[piece] + eval_matrix[i][j]
+    # else:
+    #     #Reverse the eval matrix for the opposite color (except for symmetric q and n)
+    #     if piece == 'q' or piece == 'n':
+    #         value = (eval_offset[piece] + eval_matrix[i][j])
+    #         #value = color*(eval_offset[piece] + eval_matrix[i][j])
+    #     else:
+    #         value = (eval_offset[piece] + eval_matrix[::-1][i][j])
+
+    #         #value = color*(eval_offset[piece] + eval_matrix[::-1][i][j])
+
+
 
     # print("\n-----------------Inside get_piece_value----------------")
     # print("piece: " + str(piece) + " at i="+str(i) + ", j="+str(j))
     # print("color: "+str(color))
 
-    # print("Value is: " + str(value))
+    #print("Value is: " + str(value))
     return value
 
 
