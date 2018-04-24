@@ -52,6 +52,7 @@ def main():
     #done_queue = mp.Queue()
     nnet = NNetQueue(g)
 
+    print("[Master] Spawning NNet...")
     mp.Process(target=nnet.NNetWorker).start()
 
     # if args.load_model:

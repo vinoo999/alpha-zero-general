@@ -84,24 +84,17 @@ class Coach():
     #             return [(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples]
 
 
-    def mcts_worker(self, in_queue, out_queue, bar, eps_time, lock, num, num_eps):
+    def mcts_worker(self, in_queue, out_queue, i):
         """
         Localized version of learn() and executeEpisode() that is thread-safe. Args
         game, nnet, and args should be their own localized copies. This function may
         mutate these objects.
         """
 
-        # print("[Worker " + str(num) + "] Started!")
-
         # Grab work from queue and decode the work data
         while True:
-            # print("[Worker " + str(num) + "] Waiting for work...")
             work = in_queue.get()
-            # print("[Worker " + str(num) + "] Got work! Running MCTS simulation...")
-            i = work["i"]
             game = work["game"]
-            # nnet = work["nnet"]
-            # args = work["args"]
 
             # Create our MCTS instance
             mcts = MCTS(game, self.nnet, self.args)
@@ -112,61 +105,24 @@ class Coach():
             curPlayer = 1
             episodeStep = 0
 
-            # print("[Worker " + str(num) + "] Starting game...")
-
             while True:
-                # print("[Worker " + str(num) + "] Game iteration...")
                 episodeStep += 1
-
-                # print("[Worker " + str(num) + "] Getting canonical board...")
-
                 canonicalBoard = game.getCanonicalForm(board, curPlayer)
-
-                # print("[Worker " + str(num) + "] Getting action prob...")
 
                 temp = int(episodeStep < self.args.tempThreshold)
                 pi = mcts.getActionProb(canonicalBoard, temp=temp)
-
-                # print("[Worker " + str(num) + "] Getting symmetries...")
 
                 sym = game.getSymmetries(canonicalBoard, pi)
                 for b, p in sym:
                     trainExamples.append([b, curPlayer, p, None])
 
-                # print("[Worker " + str(num) + "] Next.")
-
                 action = np.random.choice(len(pi), p=pi)
                 board, curPlayer = game.getNextState(board, curPlayer, action)
                 res = game.getGameEnded(board, curPlayer)
 
-                # print("[Worker " + str(num) + "] Next..")
-
                 if res != 0:
-                    # print("[Worker " + str(num) + "] Game done!")
-                    out_queue.put([(x[0], x[2], r * ((-1) ** (x[1] != curPlayer))) for x in trainExamples])
-
-                    # print("[Worker " + str(num) + "] Aquiring lock...")
-
-                    # Grab lock and update bar
-                    lock.aquire()
-
-                    # print("[Worker " + str(num) + "] Obtained lock!")
-
-                    eps_time.update(time.time() - end)
-                    end = time.time()
-                    bar.suffix = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(
-                                  eps=work["i"], maxeps=num_eps, et=eps_time.avg, total=bar.elapsed_td, eta=bar.eta_td)
-                    bar.next()
-
-                    # print("[Worker " + str(num) + "] Releasing lock...")
-
-                    lock.release()
-
-                    # print("[Worker " + str(num) + "] Done!")
-
+                    out_queue.put([(x[0], x[2], res * ((-1) ** (x[1] != curPlayer))) for x in trainExamples])
                     break
-
-                # print("[Worker " + str(num) + "] Game iteration done.")
 
 
     def learn(self):
@@ -187,11 +143,9 @@ class Coach():
     
                 eps_time = AverageMeter()
                 bar = Bar('Self Play', max=self.args.numEps)
-                end = time.time()
     
                 # Multiprocess self-play
                 proccesses = []
-                lock = mp.Lock()
                 work_queue = mp.Queue()
                 done_queue = mp.Queue()
 
@@ -199,7 +153,7 @@ class Coach():
 
                 # Spawn workers
                 for i in range(self.args.max_threads):
-                    tup = (work_queue, done_queue, bar, eps_time, lock, i, self.args.numEps)
+                    tup = (work_queue, done_queue, i)
                     proc = mp.Process(target=self.mcts_worker, args=tup)
                     proc.start()
 
@@ -221,9 +175,17 @@ class Coach():
 
                 print("[Master] Waiting for results...")
 
+                end = time.time()
+
                 # Wait for results to come in
                 for i in range(self.args.numEps):
                     iterationTrainExamples += done_queue.get()
+
+                    eps_time.update(time.time() - end)
+                    end = time.time()
+                    bar.suffix = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(
+                                  eps=i, maxeps=self.args.numEps, et=eps_time.avg, total=bar.elapsed_td, eta=bar.eta_td)
+                    bar.next()
 
                 print("[Master] Killing workers...")
 
