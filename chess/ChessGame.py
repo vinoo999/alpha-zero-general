@@ -175,7 +175,7 @@ class ChessGame(Game):
         new_board = copy.deepcopy(board)
         new_board[8,6] = 0
         new_board[8,7] = 0
-        return board.tostring()
+        return new_board.tostring()
 
     def getScore(self, board, player):
         b = Board(mcts_board=board)

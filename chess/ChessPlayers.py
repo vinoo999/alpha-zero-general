@@ -548,9 +548,3 @@ class EnsemblePlayer():
             with open(examples_file, "rb") as f:
                 return Unpickler(f).load()
 
-
-
-
-
-
-
