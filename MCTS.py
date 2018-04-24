@@ -85,7 +85,7 @@ class MCTS():
             #print("******************************************************************")
             #print("Game ENd: ", game_end_score)
             #print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-            return game_end_score
+            return -game_end_score
         #if s not in self.Es:
         #    self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
         #if self.Es[s]!=0:
