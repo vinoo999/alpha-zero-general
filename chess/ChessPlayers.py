@@ -287,6 +287,7 @@ class AlphaBetaPlayer():
         Do we need deepcopy for each board in the recursive call?
         Do we need player_turn = board[8][2] in each recursive call or just is max player?
         Why do we return without checking everything in alphabeta? if (beta <= alpha): return best_move
+        CHECK DEPTH!
     """
 
     def __init__(self, game):
@@ -296,18 +297,19 @@ class AlphaBetaPlayer():
     def play(self, board):
         """Returns the best move as variable *num* """
         """board is the canonical board"""
+
         depth = self.depth
 
         infinity = float('inf')
 
         player = board[8][2]
 
-        pos_player_start = True if player==0 else False
+        pos_player_start = True if player==1 else False
 
         is_maximising_player = True
 
-        print("Start playing")
-        print("player number: " + str(player))
+        #print("Start playing")
+        #print("player number: " + str(player))
 
         #Get available moves for the initial board state
         new_game_moves = self.game.getValidMoves(board, player)
@@ -319,24 +321,21 @@ class AlphaBetaPlayer():
         #print("starting available moves: " + str(len(new_game_moves)))
         #Start off the player with their worst possible score
         best_move_score = -infinity #Change to "best_move_score" and "best_move"
-        best_move = None
+        best_move = 0
 
         best_moves_scores = [-infinity, -infinity, -infinity]
         best_moves = [0, 0, 0]
 
-        print("start timer")
+        #print("start timer")
         start = timer()
 
         #Iterate over initial moves and pass into the minimax function to recurse on
         for i in range(len(new_game_moves)):
-            #print("--------------------------------------------------------------")
-            #print("Generating a move on i= " + str(i))
-            #print("--------------------------------------------------------------")
 
             new_game_move = new_game_moves[i]
 
             #Create a board copy so that we dont affect the root
-            board_copy = copy.deepcopy(board)
+            board_copy = board#copy.deepcopy(board)
 
             #Apply the move to the starting board to generate a new board (get next state is tuple holding board and count)
             new_board_state = self.game.getNextState(board_copy, player, new_game_move)[0]
@@ -344,34 +343,13 @@ class AlphaBetaPlayer():
             
             #Play the game starting with this move up to 'depth' and assess it's value
             value = self.minimax(depth - 1, new_board_state, self.game, -infinity, infinity, 1-player, not is_maximising_player)#1-player)
-            #print("-------------------------------------------------")
-            #print("i= ", i)
-            #potential_move_board = Board(mcts_board=new_board_state)
-            # print(ascii(potential_move_board))
-            # print()
-            # print("FINAL VALUE of potential move: " + str(value))
-            # print("Value of the board before the above move: " + str(self.game.getScore(board_copy, player)))
-            # print(ascii(Board(mcts_board=board_copy)))
-            # print()
-            # print("-------------------------------------------------")
-
-            #print("------------------------------------------")
-            #print("i: "+str(i)+ ", move: "+str(decode_move(new_game_move))+", value: " +str(value))
-            #print("------------------------------------------")
-
-
 
             legal_moves_values[i] = value
-
-
 
             #Grab the best move and return
             if(value >= best_move_score):
                 best_move_score = value
                 best_move = new_game_move
-                #print("*************************\n Best Move: {} , best_move_score: {} , value {}".format(decode_move(best_move), best_move_score, value))
-            #else:
-            #    print("LWEHRLEWH************************************")
 
             #Find the minimum of the highest score values, and see if our new score is larger (i.e should be inserted into the 3 best move array)
             min_score = infinity
@@ -384,20 +362,14 @@ class AlphaBetaPlayer():
                 best_moves_scores[worst_move] = value
                 best_moves[worst_move] = new_game_move
 
-
-        print("COLOR: {} \nBEST MOVES: {} \n SCORES {} \n DECISION: {} \n DECISION SCORE: {}".format(player, list(map(decode_move, best_moves)), best_moves_scores, decode_move(best_move), best_move_score))
-        print("Legal move values: ")
-        print(legal_moves_values)
-        print("")
-        print("Legal moves sorted: ")
-        print(np.sort(legal_moves_values))
-
-        print("Finished a decision.")
+        # print("Number of moves available: " + str(len(new_game_moves)))
+        # print("COLOR: {} \nBEST MOVES: {} \n SCORES {} \n DECISION: {} \n DECISION SCORE: {}".format(player, list(map(decode_move, best_moves)), best_moves_scores, decode_move(best_move), best_move_score))
+        # print("Finished a decision.")
         
         end = timer()
-        print("Time elapsed: " + str(end - start))
+        #print("Time elapsed: " + str(end - start))
 
-        print(best_move)
+        #print(best_move)
         return best_move
 
 
@@ -407,21 +379,17 @@ class AlphaBetaPlayer():
 
         #Base case where we've reached the max depth to explore
         if depth == 0:
-            #Returning score to player "above" in the min-max player tree. So should be opposite sign.
+
             return self.game.getScore(board, player)
+
+
 
         #Get all available moves stemming from the passed board state
         new_game_moves = self.game.getValidMoves(board, player)
         new_game_moves = [i for i, e in enumerate(new_game_moves) if e != 0]
 
         if(is_maximising_player):
-            # print("Maximising player", len(new_game_moves))
-            # print("is_maximising_player = " + str(is_maximising_player))
-            # print("Currently in recurisve call with player: " + str(player))
-            # print("Player to be passed into next recursive call: " + str(1-player))
-            # print("is_maximising_player to be passed = " + str( not is_maximising_player))
-            # print("The depth is: " + str(depth))
-            # print("")
+
 
             #Start best player at the worst possible score
             best_move_score = -infinity
@@ -429,8 +397,8 @@ class AlphaBetaPlayer():
             for i in range(len(new_game_moves)):
 
                 new_game_move = new_game_moves[i]
-                board_copy = copy.deepcopy(board)
-                tmp_game = copy.deepcopy(self.game)
+                board_copy = board#copy.deepcopy(board)
+                tmp_game = self.game#copy.deepcopy(self.game)
                 new_board_state = tmp_game.getNextState(board_copy, player, new_game_move)[0]
 
                 best_move_score = max(best_move_score, self.minimax(depth - 1, new_board_state, tmp_game, -infinity, infinity, 1-player, not is_maximising_player))
@@ -447,21 +415,14 @@ class AlphaBetaPlayer():
 
         else:
 
-            # print("Minimizing player", len(new_game_moves))
-            # print("is_maximising_player = " + str(is_maximising_player))
-            # print("Currently in recurisve call with player: " + str(player))
-            # print("Player to be passed into next recursive call: " + str(1-player))
-            # print("is_maximising_player to be passed = " + str( not is_maximising_player))
-            # print("The depth is: " + str(depth))
-
             best_move_score = infinity
 
             for i in range(len(new_game_moves)):
 
                 new_game_move = new_game_moves[i]
 
-                board_copy = copy.deepcopy(board)
-                tmp_game = copy.deepcopy(self.game)
+                board_copy = board#copy.deepcopy(board)
+                tmp_game = self.game#copy.deepcopy(self.game)
 
                 new_board_state = tmp_game.getNextState(board_copy, player, new_game_move)[0]
 
@@ -476,6 +437,26 @@ class AlphaBetaPlayer():
                     return best_move_score
 
             return best_move_score
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class EnsemblePlayer():
