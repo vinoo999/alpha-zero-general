@@ -304,12 +304,8 @@ class AlphaBetaPlayer():
 
         player = board[8][2]
 
-        pos_player_start = True if player==1 else False
-
         is_maximising_player = True
 
-        #print("Start playing")
-        #print("player number: " + str(player))
 
         #Get available moves for the initial board state
         new_game_moves = self.game.getValidMoves(board, player)
@@ -318,16 +314,15 @@ class AlphaBetaPlayer():
         legal_moves_values = [0]*len(new_game_moves)
 
 
-        #print("starting available moves: " + str(len(new_game_moves)))
         #Start off the player with their worst possible score
-        best_move_score = -infinity #Change to "best_move_score" and "best_move"
-        best_move = 0
-
+        best_move_score = -infinity
         best_moves_scores = [-infinity, -infinity, -infinity]
+
+        #Default moves to zero (just as a placeholder)
+        best_move = 0
         best_moves = [0, 0, 0]
 
-        #print("start timer")
-        start = timer()
+        #start = timer()
 
         #Iterate over initial moves and pass into the minimax function to recurse on
         for i in range(len(new_game_moves)):
@@ -351,13 +346,15 @@ class AlphaBetaPlayer():
                 best_move_score = value
                 best_move = new_game_move
 
-            #Find the minimum of the highest score values, and see if our new score is larger (i.e should be inserted into the 3 best move array)
+            #Find the minimum of the three highest score values
             min_score = infinity
             worst_move = i
             for i in range(len(best_moves)):
                 if best_moves_scores[i] < min_score:
                     min_score = best_moves_scores[i]
                     worst_move = i
+
+            #Insert the new move if it's score is larger than the smallest of the three prior largest
             if best_move_score > min_score:
                 best_moves_scores[worst_move] = value
                 best_moves[worst_move] = new_game_move
@@ -366,10 +363,9 @@ class AlphaBetaPlayer():
         # print("COLOR: {} \nBEST MOVES: {} \n SCORES {} \n DECISION: {} \n DECISION SCORE: {}".format(player, list(map(decode_move, best_moves)), best_moves_scores, decode_move(best_move), best_move_score))
         # print("Finished a decision.")
         
-        end = timer()
+        #end = timer()
         #print("Time elapsed: " + str(end - start))
 
-        #print(best_move)
         return best_move
 
 
@@ -379,19 +375,15 @@ class AlphaBetaPlayer():
 
         #Base case where we've reached the max depth to explore
         if depth == 0:
-
             return self.game.getScore(board, player)
 
-
-
-        #Get all available moves stemming from the passed board state
+        #Get all available moves stemming from the new board state
         new_game_moves = self.game.getValidMoves(board, player)
         new_game_moves = [i for i, e in enumerate(new_game_moves) if e != 0]
 
         if(is_maximising_player):
 
-
-            #Start best player at the worst possible score
+            #Start player at the worst possible score
             best_move_score = -infinity
 
             for i in range(len(new_game_moves)):
@@ -437,24 +429,6 @@ class AlphaBetaPlayer():
                     return best_move_score
 
             return best_move_score
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
