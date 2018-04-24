@@ -27,24 +27,20 @@ args = dotdict({
 
 
 class NNetQueue():
-    def __init__(self, work_queue, done_queue):
-        self.work_queue = work_queue
-        self.done_queue = done_queue
+    def __init__(self, g):
+        self.work_queue = mp.Queue()
+        self.done_queue = mp.Queue()
+        self.nnet = nn(g)
 
-def NNetWorker(g, q):
-    nnet = nn(g)
-
-    work_queue = q.work_queue
-    done_queue = q.done_queue
-
-    while True:
-        # print("[NNet Worker] Waiting for work...")
-        board = work_queue.get()
-        # print("[NNet Worker] Got work! Working...")
-        res = nnet.predict(board)
-        # print("[NNet Worker] Done with work! Sending results...")
-        done_queue.put(res)
-        # print("[NNet Worker] Done!")
+    def NNetWorker(self):
+        while True:
+            # print("[NNet Worker] Waiting for work...")
+            board = self.work_queue.get()
+            # print("[NNet Worker] Got work! Working...")
+            res = self.nnet.predict(board)
+            # print("[NNet Worker] Done with work! Sending results...")
+            self.done_queue.put(res)
+            # print("[NNet Worker] Done!")
 
 
 def main():
@@ -52,10 +48,11 @@ def main():
 
     g = Game()
 
-    work_queue = mp.Queue()
-    done_queue = mp.Queue()
-    nnet = NNetQueue(work_queue, done_queue)
-    mp.Process(target=NNetWorker, args=(g, nnet)).start()
+    #work_queue = mp.Queue()
+    #done_queue = mp.Queue()
+    nnet = NNetQueue(g)
+
+    mp.Process(target=nnet.NNetWorker).start()
 
     # if args.load_model:
     #     nnet.load_checkpoint(args.load_folder_file[0], args.load_folder_file[1])
