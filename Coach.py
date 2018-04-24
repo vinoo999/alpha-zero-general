@@ -36,7 +36,7 @@ class Coach():
     def __init__(self, game, nnet, args):
         self.game = game
         self.nnet = nnet
-        self.pnet = self.nnet.__class__(self.game)  # the competitor network
+        # self.pnet = self.nnet.__class__(self.game)  # the competitor network
         self.args = args
         self.mcts = MCTS(self.game, self.nnet, self.args)
         self.trainExamplesHistory = []    # history of examples from args.numItersForTrainExamplesHistory latest iterations
@@ -91,20 +91,20 @@ class Coach():
         mutate these objects.
         """
 
-        print("[Worker " + str(num) + "] Started!")
+        # print("[Worker " + str(num) + "] Started!")
 
         # Grab work from queue and decode the work data
         while True:
-            print("[Worker " + str(num) + "] Waiting for work...")
+            # print("[Worker " + str(num) + "] Waiting for work...")
             work = in_queue.get()
-            print("[Worker " + str(num) + "] Got work! Running MCTS simulation...")
+            # print("[Worker " + str(num) + "] Got work! Running MCTS simulation...")
             i = work["i"]
             game = work["game"]
-            nnet = work["nnet"]
+            # nnet = work["nnet"]
             # args = work["args"]
 
             # Create our MCTS instance
-            mcts = MCTS(game, nnet, self.args)
+            mcts = MCTS(game, self.nnet, self.args)
 
             # Start "executeEpisode()"
             trainExamples = []
@@ -112,45 +112,45 @@ class Coach():
             curPlayer = 1
             episodeStep = 0
 
-            print("[Worker " + str(num) + "] Starting game...")
+            # print("[Worker " + str(num) + "] Starting game...")
 
             while True:
-                print("[Worker " + str(num) + "] Game iteration...")
+                # print("[Worker " + str(num) + "] Game iteration...")
                 episodeStep += 1
 
-                print("[Worker " + str(num) + "] Getting canonical board...")
+                # print("[Worker " + str(num) + "] Getting canonical board...")
 
                 canonicalBoard = game.getCanonicalForm(board, curPlayer)
 
-                print("[Worker " + str(num) + "] Getting action prob...")
+                # print("[Worker " + str(num) + "] Getting action prob...")
 
                 temp = int(episodeStep < self.args.tempThreshold)
                 pi = mcts.getActionProb(canonicalBoard, temp=temp)
 
-                print("[Worker " + str(num) + "] Getting symmetries...")
+                # print("[Worker " + str(num) + "] Getting symmetries...")
 
                 sym = game.getSymmetries(canonicalBoard, pi)
                 for b, p in sym:
                     trainExamples.append([b, curPlayer, p, None])
 
-                print("[Worker " + str(num) + "] Next.")
+                # print("[Worker " + str(num) + "] Next.")
 
                 action = np.random.choice(len(pi), p=pi)
                 board, curPlayer = game.getNextState(board, curPlayer, action)
                 res = game.getGameEnded(board, curPlayer)
 
-                print("[Worker " + str(num) + "] Next..")
+                # print("[Worker " + str(num) + "] Next..")
 
                 if res != 0:
-                    print("[Worker " + str(num) + "] Game done!")
+                    # print("[Worker " + str(num) + "] Game done!")
                     out_queue.put([(x[0], x[2], r * ((-1) ** (x[1] != curPlayer))) for x in trainExamples])
 
-                    print("[Worker " + str(num) + "] Aquiring lock...")
+                    # print("[Worker " + str(num) + "] Aquiring lock...")
 
                     # Grab lock and update bar
                     lock.aquire()
 
-                    print("[Worker " + str(num) + "] Obtained lock!")
+                    # print("[Worker " + str(num) + "] Obtained lock!")
 
                     eps_time.update(time.time() - end)
                     end = time.time()
@@ -158,18 +158,18 @@ class Coach():
                                   eps=work["i"], maxeps=num_eps, et=eps_time.avg, total=bar.elapsed_td, eta=bar.eta_td)
                     bar.next()
 
-                    print("[Worker " + str(num) + "] Releasing lock...")
+                    # print("[Worker " + str(num) + "] Releasing lock...")
 
                     lock.release()
 
-                    print("[Worker " + str(num) + "] Done!")
+                    # print("[Worker " + str(num) + "] Done!")
 
                     break
 
-                print("[Worker " + str(num) + "] Game iteration done.")
+                # print("[Worker " + str(num) + "] Game iteration done.")
 
 
-    def learn(self, nnq):
+    def learn(self):
         """
         Performs numIters iterations with numEps episodes of self-play in each
         iteration. After every iteration, it retrains neural network with
@@ -195,6 +195,8 @@ class Coach():
                 work_queue = mp.Queue()
                 done_queue = mp.Queue()
 
+                print("[Master] Spawning Workers...")
+
                 # Spawn workers
                 for i in range(self.args.max_threads):
                     tup = (work_queue, done_queue, bar, eps_time, lock, i, self.args.numEps)
@@ -203,13 +205,15 @@ class Coach():
 
                     proccesses.append(proc)
 
+                print("[Master] Adding work...")
+
                 # Add work to queue
                 for eps in range(self.args.numEps):
                     # print("[Master] Adding work...")
                     data = dict()
                     data["i"] = eps
                     data["game"] = copy.deepcopy(self.game)
-                    data["nnet"] = nnq
+                    # data["nnet"] = nnq
                     # data["args"] = self.args
 
                     # Workaround for mp.queue bug (it's actually an issue with pickler which it uses)
@@ -251,11 +255,11 @@ class Coach():
             shuffle(trainExamples)
 
             # training new network, keeping a copy of the old one
-            self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
-            self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
+            # self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
+            # self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
             pmcts = MCTS(copy.deepcopy(self.game), self.pnet, self.args)
             
-            self.nnet.train(trainExamples)
+            # self.nnet.train(trainExamples)
             nmcts = MCTS(copy.deepcopy(self.game), self.nnet, self.args)
 
             print('PITTING AGAINST PREVIOUS VERSION')
@@ -266,11 +270,11 @@ class Coach():
             print('NEW/PREV WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
             if pwins+nwins > 0 and float(nwins)/(pwins+nwins) < self.args.updateThreshold:
                 print('REJECTING NEW MODEL')
-                self.nnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
+                # self.nnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
             else:
                 print('ACCEPTING NEW MODEL')
-                self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
-                self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')                
+                # self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
+                # self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')                
 
     def getCheckpointFile(self, iteration):
         return 'checkpoint_' + str(iteration) + '.pth.tar'

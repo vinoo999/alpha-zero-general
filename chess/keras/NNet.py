@@ -13,7 +13,7 @@ from NeuralNet import NeuralNet
 import argparse
 from .ChessNNet import ChessNNet as chessnet
 
-import multiprocessing as mp
+# import multiprocessing as mp
 
 args = dotdict({
     'lr': 0.001,
@@ -29,16 +29,20 @@ class NNetWrapper(NeuralNet):
         self.nnet = chessnet(game, args)
         self.board_x, self.board_y = game.getBoardSize()
         self.action_size = game.getActionSize()
-        self.work_queue = mp.Queue()
-        self.done_queue = mp.Queue()
+        # self.work_queue = mp.Queue()
+        # self.done_queue = mp.Queue()
 
-    def worker(self):
-        while True:
-            board = self.work_queue.get()
-            print("[NNet Worker] Got work...")
-            res = self.predict(board)
-            print("[NNet Worker] Done!")
-            self.done_queue.put(res)
+        # mp.Process(target=self.worker).start()
+
+    # def worker(self):
+    #     while True:
+    #         print("[NNet Worker] Waiting for work...")
+    #         board = self.work_queue.get()
+    #         print("[NNet Worker] Got work! Working...")
+    #         res = self.predict(board)
+    #         print("[NNet Worker] Done with work! Sending results...")
+    #         self.done_queue.put(res)
+    #         print("[NNet Worker] Done!")
 
     def train(self, examples):
         """
