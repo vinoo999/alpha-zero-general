@@ -132,7 +132,7 @@ class Coach():
             if not self.skipFirstSelfPlay or i>1:
                 iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
     
-                tracker = ParallelRuntimes()
+                tracker = ParallelRuntimes(self.args.mcts_workers)
                 bar = Bar('Self Play', max=self.args.numEps)
     
                 # Multiprocess self-play
@@ -209,7 +209,8 @@ class Coach():
 
             print('PITTING AGAINST PREVIOUS VERSION')
             arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
-                          lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game)
+                          lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), 
+                          self.game, num_workers=self.args.mcts_workers)
             pwins, nwins, draws = arena.playGames(self.args.arenaCompare)
 
             print('NEW/PREV WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
