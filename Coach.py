@@ -125,7 +125,7 @@ class Coach():
 
                 if res != 0:
                     examples = [(x[0], x[2], res * ((-1) ** (x[1] != curPlayer))) for x in trainExamples]
-                    done_queue.put(time.time() - start, examples)
+                    done_queue.put((time.time() - start, examples))
                     break
 
 
