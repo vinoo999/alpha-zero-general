@@ -123,7 +123,7 @@ class Arena():
             twoWon: games won by player2
             draws:  games won by nobody
         """
-        tracker = ParallelRuntimes()
+        tracker = ParallelRuntimes(self.num_workers)
         bar = Bar('Arena.playGames', max=num)
 
         oneWon = 0
