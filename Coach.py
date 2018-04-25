@@ -143,7 +143,7 @@ class Coach():
                 print("[Master] Spawning Workers...")
 
                 # Spawn workers
-                for i in range(self.args.max_threads):
+                for i in range(self.args.mcts_workers):
                     tup = (work_queue, done_queue, i)
                     proc = mp.Process(target=self.coach_worker, args=tup)
                     proc.start()
