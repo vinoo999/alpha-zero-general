@@ -3,12 +3,29 @@ from Arena import Arena
 from MCTS import MCTS
 import numpy as np
 from pytorch_classification.utils import Bar, AverageMeter
+from chess.keras.NNet import NNetWrapper as nn
 import time, os, sys
 from pickle import Pickler, Unpickler
 from random import shuffle
 from chess.ChessUtil import decode_move
 from chess.ChessGame import display
+import multiprocessing as mp
 import copy
+
+class pickler_dict():
+    def __init__(self, d):
+        self.d = d
+
+    def __getattr__(self, name):
+        # assert hasattr(self, '_data')
+        return self.d[name]
+
+    def __getstate__(self):
+        return self.d
+
+    # def __setstate__(self, tmp):
+    #     self.d = tmp
+
 
 class Coach():
     """
@@ -18,50 +35,96 @@ class Coach():
     def __init__(self, game, nnet, args):
         self.game = game
         self.nnet = nnet
-        self.pnet = self.nnet.__class__(self.game)  # the competitor network
+        self.pnet = nn(self.game)  # the competitor network
         self.args = args
         self.mcts = MCTS(self.game, self.nnet, self.args)
         self.trainExamplesHistory = []    # history of examples from args.numItersForTrainExamplesHistory latest iterations
         self.skipFirstSelfPlay = False # can be overriden in loadTrainExamples()
 
-    def executeEpisode(self):
-        """
-        This function executes one episode of self-play, starting with player 1.
-        As the game is played, each turn is added as a training example to
-        trainExamples. The game is played till the game ends. After the game
-        ends, the outcome of the game is used to assign values to each example
-        in trainExamples.
 
-        It uses a temp=1 if episodeStep < tempThreshold, and thereafter
-        uses temp=0.
+    # DEPRICATED -- use coach_worker instead
+    # def executeEpisode(self):
+    #     """
+    #     This function executes one episode of self-play, starting with player 1.
+    #     As the game is played, each turn is added as a training example to
+    #     trainExamples. The game is played till the game ends. After the game
+    #     ends, the outcome of the game is used to assign values to each example
+    #     in trainExamples.
 
-        Returns:
-            trainExamples: a list of examples of the form (canonicalBoard,pi,v)
-                           pi is the MCTS informed policy vector, v is +1 if
-                           the player eventually won the game, else -1.
-        """
-        trainExamples = []
-        board = self.game.getInitBoard()
-        self.curPlayer = 1
-        episodeStep = 0
+    #     It uses a temp=1 if episodeStep < tempThreshold, and thereafter
+    #     uses temp=0.
 
-        while True:
-            episodeStep += 1
-            canonicalBoard = self.game.getCanonicalForm(board,self.curPlayer)
-            temp = int(episodeStep < self.args.tempThreshold)
-            pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
-            sym = self.game.getSymmetries(canonicalBoard, pi)
-            for b,p in sym:
-                trainExamples.append([b, self.curPlayer, p, None])
+    #     Returns:
+    #         trainExamples: a list of examples of the form (canonicalBoard,pi,v)
+    #                        pi is the MCTS informed policy vector, v is +1 if
+    #                        the player eventually won the game, else -1.
+    #     """
+    #     trainExamples = []
+    #     board = self.game.getInitBoard()
+    #     self.curPlayer = 1
+    #     episodeStep = 0
 
-            action = np.random.choice(len(pi), p=pi)
+    #     while True:
+    #         episodeStep += 1
+    #         canonicalBoard = self.game.getCanonicalForm(board,self.curPlayer)
+    #         temp = int(episodeStep < self.args.tempThreshold)
+    #         pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
+    #         sym = self.game.getSymmetries(canonicalBoard, pi)
+    #         for b,p in sym:
+    #             trainExamples.append([b, self.curPlayer, p, None])
+
+    #         action = np.random.choice(len(pi), p=pi)
             
-            board, self.curPlayer = self.game.getNextState(board, self.curPlayer, action)
+    #         board, self.curPlayer = self.game.getNextState(board, self.curPlayer, action)
 
-            r = self.game.getGameEnded(board, self.curPlayer)
+    #         r = self.game.getGameEnded(board, self.curPlayer)
 
-            if r!=0:
-                return [(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples]
+    #         if r!=0:
+    #             return [(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples]
+
+
+    def coach_worker(self, work_queue, done_queue, i):
+        """
+        Localized version of learn() and executeEpisode() that is thread-safe. Args
+        game, nnet, and args should be their own localized copies. This function may
+        mutate these objects.
+        """
+
+        print("[Worker " + str(i) + "] Started!")
+
+        # Grab work from queue and decode the work data
+        while True:
+            work = work_queue.get()
+            game = work["game"]
+
+            # Create our MCTS instance
+            mcts = MCTS(game, self.nnet, self.args)
+
+            # Start "executeEpisode()"
+            trainExamples = []
+            board = game.getInitBoard()
+            curPlayer = 1
+            episodeStep = 0
+
+            while True:
+                episodeStep += 1
+                canonicalBoard = game.getCanonicalForm(board, curPlayer)
+
+                temp = int(episodeStep < self.args.tempThreshold)
+                pi = mcts.getActionProb(canonicalBoard, temp=temp)
+
+                sym = game.getSymmetries(canonicalBoard, pi)
+                for b, p in sym:
+                    trainExamples.append([b, curPlayer, p, None])
+
+                action = np.random.choice(len(pi), p=pi)
+                board, curPlayer = game.getNextState(board, curPlayer, action)
+                res = game.getGameEnded(board, curPlayer)
+
+                if res != 0:
+                    done_queue.put([(x[0], x[2], res * ((-1) ** (x[1] != curPlayer))) for x in trainExamples])
+                    break
+
 
     def learn(self):
         """
@@ -81,23 +144,55 @@ class Coach():
     
                 eps_time = AverageMeter()
                 bar = Bar('Self Play', max=self.args.numEps)
-                end = time.time()
     
+                # Multiprocess self-play
+                proccesses = []
+                work_queue = mp.Queue()
+                done_queue = mp.Queue()
+
+                print("[Master] Spawning Workers...")
+
+                # Spawn workers
+                for i in range(self.args.max_threads):
+                    tup = (work_queue, done_queue, i)
+                    proc = mp.Process(target=self.coach_worker, args=tup)
+                    proc.start()
+
+                    proccesses.append(proc)
+
+                print("[Master] Adding work...")
+
+                # Add work to queue
                 for eps in range(self.args.numEps):
-                    # TODO: Parallelize executeEpisode() calls
-                    self.mcts = MCTS(copy.deepcopy(self.game), self.nnet, self.args)   # reset search tree
-                    iterationTrainExamples += self.executeEpisode()
-    
-                    # bookkeeping + plot progress
+                    data = dict()
+                    data["i"] = eps
+                    data["game"] = copy.deepcopy(self.game)
+
+                    work_queue.put(data)
+
+                print("[Master] Waiting for results...")
+
+                end = time.time()
+
+                # Wait for results to come in
+                for i in range(self.args.numEps):
+                    iterationTrainExamples += done_queue.get()
+
                     eps_time.update(time.time() - end)
                     end = time.time()
-                    bar.suffix  = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(eps=eps+1, maxeps=self.args.numEps, et=eps_time.avg,
-                                                                                                               total=bar.elapsed_td, eta=bar.eta_td)
+                    bar.suffix = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(
+                                  eps=i, maxeps=self.args.numEps, et=eps_time.avg, total=bar.elapsed_td, eta=bar.eta_td)
                     bar.next()
+
+                print("[Master] Killing workers...")
+
+                # Kill workers
+                for p in proccesses:
+                    p.terminate()
+                    p.join()
+
                 bar.finish()
 
-                # save the iteration examples to the history 
-                self.trainExamplesHistory.append(iterationTrainExamples)
                 
             if len(self.trainExamplesHistory) > self.args.numItersForTrainExamplesHistory:
                 print("len(trainExamplesHistory) =", len(self.trainExamplesHistory), " => remove the oldest trainExamples")
@@ -114,10 +209,13 @@ class Coach():
 
             # training new network, keeping a copy of the old one
             self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
+
+            # normal network, don't use parallel code
             self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
             pmcts = MCTS(copy.deepcopy(self.game), self.pnet, self.args)
             
             self.nnet.train(trainExamples)
+
             nmcts = MCTS(copy.deepcopy(self.game), self.nnet, self.args)
 
             print('PITTING AGAINST PREVIOUS VERSION')
@@ -132,7 +230,8 @@ class Coach():
             else:
                 print('ACCEPTING NEW MODEL')
                 self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
-                self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')                
+                self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
+
 
     def getCheckpointFile(self, iteration):
         return 'checkpoint_' + str(iteration) + '.pth.tar'

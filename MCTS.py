@@ -77,8 +77,9 @@ class MCTS():
         Returns:
             v: the negative of the value of the current canonicalBoard
         """
-        s = self.game.stringRepresentation(canonicalBoard)
+        # print("SEARCH")
 
+        s = self.game.stringRepresentation(canonicalBoard)
 
         game_end_score = self.game.getGameEnded(canonicalBoard, 1)
         if game_end_score != 0:
@@ -137,6 +138,7 @@ class MCTS():
         testing = list(map(decode_move, list(np.where(valids==1))[0]))
         next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
         next_s = self.game.getCanonicalForm(next_s, next_player)
+        # print("SEARCHing again...")
         v = self.search(next_s)
 
         if (s,a) in self.Qsa:

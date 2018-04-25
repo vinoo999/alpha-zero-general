@@ -3,7 +3,11 @@ from chess.ChessGame import ChessGame as Game
 from chess.keras.NNet import NNetWrapper as nn
 #from othello.OthelloGame import OthelloGame as Game
 #from othello.keras.NNet import NNetWrapper as nn
+
+from AtomicNeuralNet import *
 from utils import *
+
+import multiprocessing as mp
 
 args = dotdict({
     'numIters': 100,
@@ -14,23 +18,33 @@ args = dotdict({
     'numMCTSSims': 25,
     'arenaCompare': 30,
     'cpuct': 1,
-    
+
+    'max_threads': 2,
+
     'checkpoint': './temp/',
     'load_model': False,
-    'load_folder_file': ('/home/vrr2112/alpha-zero-general/saves/trial4/','checkpoint_2.pth.tar'),
+    'load_folder_file': ('saves/','best.pth.tar'),
     'numItersForTrainExamplesHistory': 20,
 
 })
 
-if __name__=="__main__":
+def main():
     g = Game()
-    nnet = nn(g)
+
+    nsync = NNetSync()
+    nnet = AtomicNNet(nsync)
+    mp.Process(target=NNetWorker, args=(g, nsync)).start()
 
     if args.load_model:
         nnet.load_checkpoint(args.load_folder_file[0], args.load_folder_file[1])
 
     c = Coach(g, nnet, args)
+
     if args.load_model:
         print("Load trainExamples from file")
         c.loadTrainExamples()
+
     c.learn()
+
+if __name__=="__main__":
+    main()
