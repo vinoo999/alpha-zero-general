@@ -165,7 +165,17 @@ class Coach():
                 # Wait for results to come in
                 for i in range(self.args.numEps):
                     runtime, examples = done_queue.get()
-                    iterationTrainExamples += examples
+                    
+                    to_add = False
+                    loss_rate = 0.9
+                    if abs(examples[0][2]) != 1:
+                        if randint(1,int(loss_rate*100)) > loss_rate*100:
+                            to_add = True
+                    else:
+                        to_add = True
+
+                    if to_add:
+                        iterationTrainExamples += examples
 
                     tracker.update(runtime)
                     bar.suffix = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(
