@@ -74,6 +74,8 @@ class Arena():
             verbose = data["verbose"]
             eps = data["i"]
 
+            start = time.time()
+
             players = [player2, None, player1]
             board = game.getInitBoard()
             curPlayer = 1
@@ -107,7 +109,7 @@ class Arena():
 
             # Return the result of the game from the HUMAN (player 1) perspective
             # NOTE: This is not the same thing as game.getGameEnded(board, curPlayer)
-            done_queue.put(res * curPlayer)
+            done_queue.put((time.time() - start, res * curPlayer))
 
 
     def playGames(self, num, verbose=False):
@@ -122,8 +124,6 @@ class Arena():
         """
         eps_time = AverageMeter()
         bar = Bar('Arena.playGames', max=num)
-        end = time.time()
-        eps = 0
 
         oneWon = 0
         twoWon = 0
@@ -173,7 +173,7 @@ class Arena():
 
         # Wait for results to come in
         for i in range(num):
-            gameResult = done_queue.get()
+            runtime, gameResult = done_queue.get()
             if gameResult == 1:
                 oneWon += 1
             elif gameResult == -1:
@@ -182,10 +182,9 @@ class Arena():
                 draws += 1
 
             # bookkeeping + plot progress
-            eps_time.update(time.time() - end)
-            end = time.time()
+            eps_time.update(runtime)
             bar.suffix = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(
-                           eps=i+1, maxeps=num, et=eps_time.avg, total=bar.elapsed_td, eta=bar.eta_td)
+                           eps=i + 1, maxeps=num, et=eps_time.avg, total=bar.elapsed_td, eta=bar.eta_td)
             bar.next()
 
         print("[Master] Killing workers...")

@@ -94,8 +94,10 @@ class Coach():
 
         # Grab work from queue and decode the work data
         while True:
-            work = work_queue.get()
-            game = work["game"]
+            data = work_queue.get()
+            game = data["game"]
+
+            start = time.time()
 
             # Create our MCTS instance
             mcts = MCTS(game, self.nnet, self.args)
@@ -122,7 +124,8 @@ class Coach():
                 res = game.getGameEnded(board, curPlayer)
 
                 if res != 0:
-                    done_queue.put([(x[0], x[2], res * ((-1) ** (x[1] != curPlayer))) for x in trainExamples])
+                    examples = [(x[0], x[2], res * ((-1) ** (x[1] != curPlayer))) for x in trainExamples]
+                    done_queue.put(time.time() - start, examples)
                     break
 
 
@@ -172,14 +175,12 @@ class Coach():
 
                 print("[Master] Waiting for results...")
 
-                end = time.time()
-
                 # Wait for results to come in
                 for i in range(self.args.numEps):
-                    iterationTrainExamples += done_queue.get()
+                    runtime, examples = done_queue.get()
+                    iterationTrainExamples += examples
 
-                    eps_time.update(time.time() - end)
-                    end = time.time()
+                    eps_time.update(runtime)
                     bar.suffix = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(
                                   eps=i, maxeps=self.args.numEps, et=eps_time.avg, total=bar.elapsed_td, eta=bar.eta_td)
                     bar.next()
