@@ -14,8 +14,11 @@ class ChessGame(Game):
     def __init__(self):
         self.n = 8
         self.state_counts = defaultdict(int)
-        self.result = Queue(maxsize=1)
         self.webserver = False
+
+        # TODO: Workaround for Queue pickling error. Maybe try mp.Queue?
+        if self.webserver:
+            self.result = Queue(maxsize=1)
 
     def getInitBoard(self):
         # return initial board (numpy board)
