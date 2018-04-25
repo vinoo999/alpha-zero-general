@@ -65,5 +65,5 @@ n1p = n1.play
 # n2p = lambda x: np.argmax(mcts2.getActionProb(x, temp=0))
 #n2 = NNetPlayer(g, "saves/save-bc5a3cffa65", "best.pth.tar", { 'numMCTSSims': 50, 'cpuct': 1.0, 'temp': 0 })
 #n2p = n2.play
-arena = Arena.Arena(n1p, rp, g, display=display)
-arena.playGames(3, verbose=True)
+arena = Arena.Arena(n1, rp, g, display=display, num_workers=1)
+arena.playGames(100, verbose=False)

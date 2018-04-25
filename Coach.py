@@ -9,7 +9,6 @@ from pickle import Pickler, Unpickler
 from random import shuffle
 from chess.ChessUtil import decode_move
 from chess.ChessGame import display
-from queue import Queue
 import multiprocessing as mp
 import copy
 
@@ -43,7 +42,7 @@ class Coach():
         self.skipFirstSelfPlay = False # can be overriden in loadTrainExamples()
 
 
-    # DEPRICATED -- use mcts_worker instead
+    # DEPRICATED -- use coach_worker instead
     # def executeEpisode(self):
     #     """
     #     This function executes one episode of self-play, starting with player 1.
@@ -84,7 +83,7 @@ class Coach():
     #             return [(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples]
 
 
-    def mcts_worker(self, in_queue, out_queue, i):
+    def coach_worker(self, work_queue, done_queue, i):
         """
         Localized version of learn() and executeEpisode() that is thread-safe. Args
         game, nnet, and args should be their own localized copies. This function may
@@ -95,7 +94,7 @@ class Coach():
 
         # Grab work from queue and decode the work data
         while True:
-            work = in_queue.get()
+            work = work_queue.get()
             game = work["game"]
 
             # Create our MCTS instance
@@ -123,7 +122,7 @@ class Coach():
                 res = game.getGameEnded(board, curPlayer)
 
                 if res != 0:
-                    out_queue.put([(x[0], x[2], res * ((-1) ** (x[1] != curPlayer))) for x in trainExamples])
+                    done_queue.put([(x[0], x[2], res * ((-1) ** (x[1] != curPlayer))) for x in trainExamples])
                     break
 
 
@@ -156,7 +155,7 @@ class Coach():
                 # Spawn workers
                 for i in range(self.args.max_threads):
                     tup = (work_queue, done_queue, i)
-                    proc = mp.Process(target=self.mcts_worker, args=tup)
+                    proc = mp.Process(target=self.coach_worker, args=tup)
                     proc.start()
 
                     proccesses.append(proc)
@@ -209,36 +208,13 @@ class Coach():
             shuffle(trainExamples)
 
             # training new network, keeping a copy of the old one
-            if self.args.parallel:
-                work = dict()
-                work["instruction"] = "save"
-                work["folder"] = self.args.checkpoint
-                work["filename"] = "temp.pth.tar"
-
-                self.nnet.lock.acquire()
-                self.nnet.work_queue.put(work)
-                self.nnet.done_queue.get()
-                self.nnet.lock.release()
-            else:
-                self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
+            self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
 
             # normal network, don't use parallel code
             self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
-            pnet_args = copy.deepcopy(self.args)
-            pnet_args["parallel"] = False
-            pmcts = MCTS(copy.deepcopy(self.game), self.pnet, pnet_args)
+            pmcts = MCTS(copy.deepcopy(self.game), self.pnet, self.args)
             
-            if self.args.parallel:
-                work = dict()
-                work["instruction"] = "train"
-                work["examples"] = trainExamples
-
-                self.nnet.lock.acquire()
-                self.nnet.work_queue.put(work)
-                self.nnet.done_queue.get()
-                self.nnet.lock.release()
-            else:
-                self.nnet.train(trainExamples)
+            self.nnet.train(trainExamples)
 
             nmcts = MCTS(copy.deepcopy(self.game), self.nnet, self.args)
 
@@ -250,43 +226,11 @@ class Coach():
             print('NEW/PREV WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
             if pwins+nwins > 0 and float(nwins)/(pwins+nwins) < self.args.updateThreshold:
                 print('REJECTING NEW MODEL')
-                if self.args.parallel:
-                    work = dict()
-                    work["instruction"] = "load"
-                    work["folder"] = self.args.checkpoint
-                    work["filename"] = "temp.pth.tar"
-
-                    self.nnet.lock.acquire()
-                    self.nnet.work_queue.put(work)
-                    self.nnet.done_queue.get()
-                    self.nnet.lock.release()
-                else:
-                    self.nnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
-
+                self.nnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
             else:
                 print('ACCEPTING NEW MODEL')
-                # self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
-                # self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
-                if self.args.parallel:
-                    work1 = dict()
-                    work1["instruction"] = "save"
-                    work1["folder"] = self.args.checkpoint
-                    work1["filename"] = self.getCheckpointFile(i)
-
-                    work2 = dict()
-                    work2["instruction"] = "save"
-                    work2["folder"] = self.args.checkpoint
-                    work2["filename"] = "best.pth.tar"
-
-                    self.nnet.lock.acquire()
-                    self.nnet.work_queue.put(work1)
-                    self.nnet.work_queue.put(work2)
-                    self.nnet.done_queue.get()
-                    self.nnet.done_queue.get()
-                    self.nnet.lock.release()
-                else:
-                    self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
-                    self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
+                self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
+                self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
 
 
     def getCheckpointFile(self, iteration):
