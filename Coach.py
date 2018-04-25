@@ -180,6 +180,8 @@ class Coach():
                     p.terminate()
                     p.join()
 
+                self.trainExamplesHistory.append(iterationTrainExamples)
+
                 bar.finish()
 
                 
@@ -188,7 +190,7 @@ class Coach():
                 self.trainExamplesHistory.pop(0)
             # backup history to a file
             # NB! the examples were collected using the model from the previous iteration, so (i-1)  
-            self.saveTrainExamples(i-1)
+            self.saveTrainExamples(i - 1)
             
             # shuffle examlpes before training
             trainExamples = []

@@ -5,10 +5,18 @@ from keras.models import *
 from keras.layers import *
 from keras.optimizers import *
 
+import tensorflow as tf
+from keras.backend.tensorflow_backend import set_session
+
 import argparse
 
 class ChessNNet():
     def __init__(self, game, args):
+        # GPU Configuration
+        config = tf.ConfigProto()
+        config.gpu_options.per_process_gpu_memory_fraction = 0.45
+        set_session(tf.Session(config=config))
+
         # game params
         self.board_x, self.board_y = game.getBoardSize()
         self.action_size = game.getActionSize()

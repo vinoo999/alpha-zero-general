@@ -43,7 +43,7 @@ def NNetWorker(game, nsync):
 
         elif data["inst"] == "train":
             print("[NNetWorker] Got train...")
-            nnet.train(work["examples"])
+            nnet.train(data["examples"])
             res = "OK"
 
         done_queue.put(res)

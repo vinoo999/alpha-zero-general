@@ -16,9 +16,9 @@ from .ChessNNet import ChessNNet as chessnet
 # import multiprocessing as mp
 
 args = dotdict({
-    'lr': 0.001,
+    'lr': 0.005,
     'dropout': 0.3,
-    'epochs': 10,
+    'epochs': 100,
     'batch_size': 64,
     'cuda': True,
     'num_channels': 512,
