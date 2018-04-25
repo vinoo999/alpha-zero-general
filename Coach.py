@@ -11,6 +11,7 @@ from chess.ChessUtil import decode_move
 from chess.ChessGame import display
 import multiprocessing as mp
 import copy
+import random
 from utils import *
 
 
@@ -96,6 +97,7 @@ class Coach():
             episodeStep = 0
 
             while True:
+                print("Worker: {}, Episode Step: {}".format(i, episodeStep))
                 episodeStep += 1
                 canonicalBoard = game.getCanonicalForm(board, curPlayer)
 
@@ -169,7 +171,7 @@ class Coach():
                     to_add = False
                     loss_rate = 0.9
                     if abs(examples[0][2]) != 1:
-                        if randint(1,int(loss_rate*100)) > loss_rate*100:
+                        if random.randint(1,int(loss_rate*100)) > loss_rate*100:
                             to_add = True
                     else:
                         to_add = True
