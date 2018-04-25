@@ -2,6 +2,7 @@ from pytorch_classification.utils import Bar, AverageMeter
 import multiprocessing as mp
 import numpy as np
 import time, copy
+from utils import *
 
 class Arena():
     """
@@ -122,7 +123,7 @@ class Arena():
             twoWon: games won by player2
             draws:  games won by nobody
         """
-        eps_time = AverageMeter()
+        tracker = ParallelRuntimes()
         bar = Bar('Arena.playGames', max=num)
 
         oneWon = 0
@@ -182,9 +183,10 @@ class Arena():
                 draws += 1
 
             # bookkeeping + plot progress
-            eps_time.update(runtime)
+            tracker.update(runtime)
             bar.suffix = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(
-                           eps=i + 1, maxeps=num, et=eps_time.avg, total=bar.elapsed_td, eta=bar.eta_td)
+                           eps=i + 1, maxeps=num, et=tracker.avg(), total=bar.elapsed_td, 
+                           eta=tracker.eta(i + 1, num))
             bar.next()
 
         print("[Master] Killing workers...")

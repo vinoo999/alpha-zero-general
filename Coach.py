@@ -11,20 +11,7 @@ from chess.ChessUtil import decode_move
 from chess.ChessGame import display
 import multiprocessing as mp
 import copy
-
-class pickler_dict():
-    def __init__(self, d):
-        self.d = d
-
-    def __getattr__(self, name):
-        # assert hasattr(self, '_data')
-        return self.d[name]
-
-    def __getstate__(self):
-        return self.d
-
-    # def __setstate__(self, tmp):
-    #     self.d = tmp
+from utils import *
 
 
 class Coach():
@@ -145,7 +132,7 @@ class Coach():
             if not self.skipFirstSelfPlay or i>1:
                 iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
     
-                eps_time = AverageMeter()
+                tracker = ParallelRuntimes()
                 bar = Bar('Self Play', max=self.args.numEps)
     
                 # Multiprocess self-play
@@ -180,9 +167,10 @@ class Coach():
                     runtime, examples = done_queue.get()
                     iterationTrainExamples += examples
 
-                    eps_time.update(runtime)
+                    tracker.update(runtime)
                     bar.suffix = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(
-                                  eps=i, maxeps=self.args.numEps, et=eps_time.avg, total=bar.elapsed_td, eta=bar.eta_td)
+                                  eps=i, maxeps=self.args.numEps, et=tracker.avg(), total=bar.elapsed_td, 
+                                  eta=tracker.eta(i, self.args.numEps))
                     bar.next()
 
                 print("[Master] Killing workers...")
