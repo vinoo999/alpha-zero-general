@@ -11,8 +11,8 @@ Squares are stored and manipulated as (x,y) tuples.
 x is the column, y is the row.
 '''
 import re
-from .MiniChessConstants import *
-from .MiniChessUtil import *
+from MiniChessConstants import *
+from MiniChessUtil import *
 import numpy as np
 
 class Board():
@@ -30,23 +30,37 @@ class Board():
             self.init_alamo()
 
     def init_alamo(self):
+        '''Get alamo board'''
         self.board = np.zeros((6,6))
 
         positions = enumerate_all_pos('alamo')
         for pos in positions:
             i,j = translate(pos, 'alamo')
             color, piece = ALAMO_INIT_STATE[pos]
-            num_color = COLOR_MAPPING[color]
-            num_piece = PIECE_MAPPING[piece]
-            if piece == KING:
-                self.kings[color] = pos
-            self.board[i,j] = num_color*num_piece
+            if piece:
+                num_color = COLOR_MAPPING[color]
+                num_piece = PIECE_MAPPING[piece]
+                if piece == KING:
+                    self.kings[color] = pos
+                self.board[i,j] = num_color*num_piece
+            else:
+                self.board[i,j] = 0
         return
+
+    def get_legal_moves(self, player):
+        '''player is a number 1 for white -1 for black'''
+        positions = enumerate_all_pos(self.variant)
+        num_ranks = self.board.shape[0]
+        num_files = self.board.shape[1]
+
+        for pos in positions:
+            f, r = translate(pos, self.variant)
+
 
     def get_score(self):
         for i in range(self.board.shape[0]):
             for j in range(self.board.shape[1]):
-                
+                return
 
 
 

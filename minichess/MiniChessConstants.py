@@ -4,7 +4,7 @@
 BLACK = 'b'
 WHITE = 'w'
 
-EMPTY = ''
+EMPTY = ('','')
 
 PAWN = 'p'
 KNIGHT = 'n'
@@ -28,9 +28,9 @@ PIECE_DECODER = {
     1 : 'p',
     2 : 'n',
     3 : 'b',
-    4 : 'r',
-    5 : 'q',
-    6 : 'k'
+    5 : 'r',
+    9 : 'q',
+    100 : 'k'
 }
 
 ALAMO_RANK_MAPPING = {
