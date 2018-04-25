@@ -21,4 +21,4 @@ class ParallelRuntimes():
         return sum(self.runtimes) / len(self.runtimes)
 
     def eta(self, completed, total):
-        return self.avg() * (total - completed)
+        return self.avg() * (total - completed) / self.max_len
