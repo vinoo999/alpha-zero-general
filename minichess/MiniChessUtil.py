@@ -49,7 +49,7 @@ def ascii(board):
     for chess_rank in range(board.shape[0]-1, -1, -1):
         for chess_file in range(board.shape[1]):
             if chess_file == 0:
-                s += ' ' + str(chess_rank) + ' |'
+                s += ' ' + str(chess_rank+1) + ' |'
             
             s += ' '  + decode_piece(board[chess_rank,chess_file]) + ' '
         s += '|\n'
