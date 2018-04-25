@@ -3,16 +3,9 @@ from Arena import Arena
 from MCTS import MCTS
 import numpy as np
 from pytorch_classification.utils import Bar, AverageMeter
-from chess.keras.NNet import NNetWrapper as nn
 import time, os, sys
 from pickle import Pickler, Unpickler
 from random import shuffle
-from chess.ChessUtil import decode_move
-from chess.ChessGame import display
-import multiprocessing as mp
-import copy
-import random
-from utils import *
 
 
 class Coach():
@@ -23,100 +16,48 @@ class Coach():
     def __init__(self, game, nnet, args):
         self.game = game
         self.nnet = nnet
-        self.pnet = nn(self.game)  # the competitor network
+        self.pnet = self.nnet.__class__(self.game)  # the competitor network
         self.args = args
         self.mcts = MCTS(self.game, self.nnet, self.args)
         self.trainExamplesHistory = []    # history of examples from args.numItersForTrainExamplesHistory latest iterations
         self.skipFirstSelfPlay = False # can be overriden in loadTrainExamples()
 
-
-    # DEPRICATED -- use coach_worker instead
-    # def executeEpisode(self):
-    #     """
-    #     This function executes one episode of self-play, starting with player 1.
-    #     As the game is played, each turn is added as a training example to
-    #     trainExamples. The game is played till the game ends. After the game
-    #     ends, the outcome of the game is used to assign values to each example
-    #     in trainExamples.
-
-    #     It uses a temp=1 if episodeStep < tempThreshold, and thereafter
-    #     uses temp=0.
-
-    #     Returns:
-    #         trainExamples: a list of examples of the form (canonicalBoard,pi,v)
-    #                        pi is the MCTS informed policy vector, v is +1 if
-    #                        the player eventually won the game, else -1.
-    #     """
-    #     trainExamples = []
-    #     board = self.game.getInitBoard()
-    #     self.curPlayer = 1
-    #     episodeStep = 0
-
-    #     while True:
-    #         episodeStep += 1
-    #         canonicalBoard = self.game.getCanonicalForm(board,self.curPlayer)
-    #         temp = int(episodeStep < self.args.tempThreshold)
-    #         pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
-    #         sym = self.game.getSymmetries(canonicalBoard, pi)
-    #         for b,p in sym:
-    #             trainExamples.append([b, self.curPlayer, p, None])
-
-    #         action = np.random.choice(len(pi), p=pi)
-            
-    #         board, self.curPlayer = self.game.getNextState(board, self.curPlayer, action)
-
-    #         r = self.game.getGameEnded(board, self.curPlayer)
-
-    #         if r!=0:
-    #             return [(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples]
-
-
-    def coach_worker(self, work_queue, done_queue, i):
+    def executeEpisode(self):
         """
-        Localized version of learn() and executeEpisode() that is thread-safe. Args
-        game, nnet, and args should be their own localized copies. This function may
-        mutate these objects.
+        This function executes one episode of self-play, starting with player 1.
+        As the game is played, each turn is added as a training example to
+        trainExamples. The game is played till the game ends. After the game
+        ends, the outcome of the game is used to assign values to each example
+        in trainExamples.
+        It uses a temp=1 if episodeStep < tempThreshold, and thereafter
+        uses temp=0.
+        Returns:
+            trainExamples: a list of examples of the form (canonicalBoard,pi,v)
+                           pi is the MCTS informed policy vector, v is +1 if
+                           the player eventually won the game, else -1.
         """
+        trainExamples = []
+        board = self.game.getInitBoard()
+        self.curPlayer = 1
+        episodeStep = 0
 
-        print("[Worker " + str(i) + "] Started!")
-
-        # Grab work from queue and decode the work data
         while True:
-            data = work_queue.get()
-            game = data["game"]
+            episodeStep += 1
+            canonicalBoard = self.game.getCanonicalForm(board,self.curPlayer)
+            temp = int(episodeStep < self.args.tempThreshold)
 
-            start = time.time()
+            pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
+            sym = self.game.getSymmetries(canonicalBoard, pi)
+            for b,p in sym:
+                trainExamples.append([b, self.curPlayer, p, None])
 
-            # Create our MCTS instance
-            mcts = MCTS(game, self.nnet, self.args)
+            action = np.random.choice(len(pi), p=pi)
+            board, self.curPlayer = self.game.getNextState(board, self.curPlayer, action)
 
-            # Start "executeEpisode()"
-            trainExamples = []
-            board = game.getInitBoard()
-            curPlayer = 1
-            episodeStep = 0
+            r = self.game.getGameEnded(board, self.curPlayer)
 
-            while True:
-                print("Worker: {}, Episode Step: {}".format(i, episodeStep))
-                episodeStep += 1
-                canonicalBoard = game.getCanonicalForm(board, curPlayer)
-
-                temp = int(episodeStep < self.args.tempThreshold)
-                pi = mcts.getActionProb(canonicalBoard, temp=temp)
-
-                sym = game.getSymmetries(canonicalBoard, pi)
-                for b, p in sym:
-                    trainExamples.append([b, curPlayer, p, None])
-
-                action = np.random.choice(len(pi), p=pi)
-                board, curPlayer = game.getNextState(board, curPlayer, action)
-                res = game.getGameEnded(board, curPlayer)
-
-                if res != 0:
-                    examples = [(x[0], x[2], res * ((-1) ** (x[1] != curPlayer))) for x in trainExamples]
-                    done_queue.put((time.time() - start, examples))
-                    break
-
+            if r!=0:
+                return [(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples]
 
     def learn(self):
         """
@@ -134,75 +75,31 @@ class Coach():
             if not self.skipFirstSelfPlay or i>1:
                 iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
     
-                tracker = ParallelRuntimes(self.args.mcts_workers)
+                eps_time = AverageMeter()
                 bar = Bar('Self Play', max=self.args.numEps)
+                end = time.time()
     
-                # Multiprocess self-play
-                proccesses = []
-                work_queue = mp.Queue()
-                done_queue = mp.Queue()
-
-                print("[Master] Spawning Workers...")
-
-                # Spawn workers
-                for i in range(self.args.mcts_workers):
-                    tup = (work_queue, done_queue, i)
-                    proc = mp.Process(target=self.coach_worker, args=tup)
-                    proc.start()
-
-                    proccesses.append(proc)
-
-                print("[Master] Adding work...")
-
-                # Add work to queue
                 for eps in range(self.args.numEps):
-                    data = dict()
-                    data["i"] = eps
-                    data["game"] = copy.deepcopy(self.game)
-
-                    work_queue.put(data)
-
-                print("[Master] Waiting for results...")
-
-                # Wait for results to come in
-                for i in range(self.args.numEps):
-                    runtime, examples = done_queue.get()
-                    
-                    to_add = False
-                    loss_rate = 0.9
-                    if abs(examples[0][2]) != 1:
-                        if random.randint(1,int(loss_rate*100)) > loss_rate*100:
-                            to_add = True
-                    else:
-                        to_add = True
-
-                    if to_add:
-                        iterationTrainExamples += examples
-
-                    tracker.update(runtime)
-                    bar.suffix = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(
-                                  eps=i, maxeps=self.args.numEps, et=tracker.avg(), total=bar.elapsed_td, 
-                                  eta=tracker.eta(i, self.args.numEps))
+                    self.mcts = MCTS(self.game, self.nnet, self.args)   # reset search tree
+                    iterationTrainExamples += self.executeEpisode()
+    
+                    # bookkeeping + plot progress
+                    eps_time.update(time.time() - end)
+                    end = time.time()
+                    bar.suffix  = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(eps=eps+1, maxeps=self.args.numEps, et=eps_time.avg,
+                                                                                                               total=bar.elapsed_td, eta=bar.eta_td)
                     bar.next()
-
-                print("[Master] Killing workers...")
-
-                # Kill workers
-                for p in proccesses:
-                    p.terminate()
-                    p.join()
-
-                self.trainExamplesHistory.append(iterationTrainExamples)
-
                 bar.finish()
 
+                # save the iteration examples to the history 
+                self.trainExamplesHistory.append(iterationTrainExamples)
                 
             if len(self.trainExamplesHistory) > self.args.numItersForTrainExamplesHistory:
                 print("len(trainExamplesHistory) =", len(self.trainExamplesHistory), " => remove the oldest trainExamples")
                 self.trainExamplesHistory.pop(0)
             # backup history to a file
             # NB! the examples were collected using the model from the previous iteration, so (i-1)  
-            self.saveTrainExamples(i - 1)
+            self.saveTrainExamples(i-1)
             
             # shuffle examlpes before training
             trainExamples = []
@@ -212,19 +109,15 @@ class Coach():
 
             # training new network, keeping a copy of the old one
             self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
-
-            # normal network, don't use parallel code
             self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
-            pmcts = MCTS(copy.deepcopy(self.game), self.pnet, self.args)
+            pmcts = MCTS(self.game, self.pnet, self.args)
             
             self.nnet.train(trainExamples)
-
-            nmcts = MCTS(copy.deepcopy(self.game), self.nnet, self.args)
+            nmcts = MCTS(self.game, self.nnet, self.args)
 
             print('PITTING AGAINST PREVIOUS VERSION')
             arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
-                          lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), 
-                          self.game, num_workers=self.args.mcts_workers)
+                          lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game)
             pwins, nwins, draws = arena.playGames(self.args.arenaCompare)
 
             print('NEW/PREV WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
@@ -234,8 +127,7 @@ class Coach():
             else:
                 print('ACCEPTING NEW MODEL')
                 self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
-                self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
-
+                self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')                
 
     def getCheckpointFile(self, iteration):
         return 'checkpoint_' + str(iteration) + '.pth.tar'

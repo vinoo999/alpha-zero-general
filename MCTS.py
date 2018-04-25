@@ -1,10 +1,5 @@
 import math
 import numpy as np
-from chess.ChessUtil import decode_move, algebraic
-from chess.ChessGame import display
-import sys
-import copy
-from random import shuffle
 EPS = 1e-8
 
 class MCTS():
@@ -28,25 +23,16 @@ class MCTS():
         """
         This function performs numMCTSSims simulations of MCTS starting from
         canonicalBoard.
-
         Returns:
             probs: a policy vector where the probability of the ith action is
                    proportional to Nsa[(s,a)]**(1./temp)
         """
         for i in range(self.args.numMCTSSims):
-            tmp_game = copy.deepcopy(self.game)
             self.search(canonicalBoard)
-            self.game = tmp_game
 
         s = self.game.stringRepresentation(canonicalBoard)
         counts = [self.Nsa[(s,a)] if (s,a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
-        #print("**********************************")
-        #x= list(np.where(np.array(counts) > 0)[0])
-        #tmp_map = map(decode_move, x)
-        #print(list(tmp_map))
-        #print([counts[d] for d in x])
 
-        #print("##################################")
         if temp==0:
             bestA = np.argmax(counts)
             probs = [0]*len(counts)
@@ -63,35 +49,25 @@ class MCTS():
         This function performs one iteration of MCTS. It is recursively called
         till a leaf node is found. The action chosen at each node is one that
         has the maximum upper confidence bound as in the paper.
-
         Once a leaf node is found, the neural network is called to return an
         initial policy P and a value v for the state. This value is propogated
         up the search path. In case the leaf node is a terminal state, the
         outcome is propogated up the search path. The values of Ns, Nsa, Qsa are
         updated.
-
         NOTE: the return values are the negative of the value of the current
         state. This is done since v is in [-1,1] and if v is the value of a
         state for the current player, then its value is -v for the other player.
-
         Returns:
             v: the negative of the value of the current canonicalBoard
         """
-        # print("SEARCH")
 
         s = self.game.stringRepresentation(canonicalBoard)
 
-        game_end_score = self.game.getGameEnded(canonicalBoard, 1)
-        if game_end_score != 0:
-            #print("******************************************************************")
-            #print("Game ENd: ", game_end_score)
-            #print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-            return -game_end_score
-        #if s not in self.Es:
-        #    self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
-        #if self.Es[s]!=0:
-        #    # terminal node
-        #    return -self.Es[s]
+        if s not in self.Es:
+            self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
+        if self.Es[s]!=0:
+            # terminal node
+            return -self.Es[s]
 
         if s not in self.Ps:
             # leaf node
@@ -119,9 +95,7 @@ class MCTS():
         best_act = -1
 
         # pick the action with the highest upper confidence bound
-        all_actions = list(range(self.game.getActionSize()))
-        shuffle(all_actions)
-        for a in all_actions:
+        for a in range(self.game.getActionSize()):
             if valids[a]:
                 if (s,a) in self.Qsa:
                     u = self.Qsa[(s,a)] + self.args.cpuct*self.Ps[s][a]*math.sqrt(self.Ns[s])/(1+self.Nsa[(s,a)])
@@ -133,12 +107,9 @@ class MCTS():
                     best_act = a
 
         a = best_act
-        
-        where = np.where(valids==1)
-        testing = list(map(decode_move, list(np.where(valids==1))[0]))
         next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
         next_s = self.game.getCanonicalForm(next_s, next_player)
-        # print("SEARCHing again...")
+
         v = self.search(next_s)
 
         if (s,a) in self.Qsa:
