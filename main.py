@@ -19,7 +19,8 @@ args = dotdict({
     'arenaCompare': 30,
     'cpuct': 1,
 
-    'max_threads': 2,
+    'mcts_workers': 16,
+    'nnet_workers': 16,
 
     'checkpoint': './temp/',
     'load_model': False,
