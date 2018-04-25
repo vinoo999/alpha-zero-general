@@ -6,11 +6,11 @@ class dotdict(dict):
             raise AttributeError
 
 class ParallelRuntimes():
-	def __init__(self, num_workers):
-		self.max_len = num_workers
-		self.runtimes = []
+    def __init__(self, num_workers):
+        self.max_len = num_workers
+        self.runtimes = []
 
-	def update(self, runtime):
+    def update(self, runtime):
         if len(self.runtimes) < self.max_len:
             self.runtimes.append(runtime)
         else:
