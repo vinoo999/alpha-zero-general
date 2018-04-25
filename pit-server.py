@@ -16,8 +16,8 @@ use this script to play any two agents against each other, or play manually with
 any agent.
 """
 
-ncp = "saves/save-bc5a3cffa65"                       # Checkpoint path
-ncf = "best.pth.tar"                                 # Checkpoint file
+ncp = "saves"                                        # Checkpoint path
+ncf = "model.pth.tar"                                # Checkpoint file
 nca = { 'numMCTSSims': 50, 'cpuct': 1.0, 'temp': 0 } # NNet args
 
 class GameWrapper():
