@@ -1,6 +1,7 @@
 from Coach import Coach
 from chess.ChessGame import ChessGame as Game
 from chess.keras.NNet import NNetWrapper as nn
+from AtomicNeuralNet import *
 from utils import *
 
 import multiprocessing as mp
@@ -15,79 +16,30 @@ args = dotdict({
     'arenaCompare': 40,
     'cpuct': 1,
 
-    'max_threads': 8,
-    'parallel': True,
+    'max_threads': 2,
 
     'checkpoint': './temp/',
-    'load_model': False,
-    'load_folder_file': ('/dev/models/8x100x50','best.pth.tar'),
+    'load_model': True,
+    'load_folder_file': ('saves/save-bc5a3cffa65','best.pth.tar'),
     'numItersForTrainExamplesHistory': 20,
 
 })
 
-
-class NNetQueue():
-    def __init__(self, work_queue, done_queue, lock):
-        """
-        Convenience class for NNetWorker
-        """
-        self.work_queue = work_queue
-        self.done_queue = done_queue
-        self.lock = lock
-
-
-def NNetWorker(g, q): 
-    """
-    Workaround for multiprocessing errors when using Queue. Have to
-    have queue passed from parent to child process in order for everything
-    to work. Also there can only be one NNet, so multiple mcts_worker 
-    threads must share this NNet.
-    """
-    nnet = nn(g)
-
-    work_queue = q.work_queue
-    done_queue = q.done_queue
-
-    while True:
-        work = work_queue.get()
-
-        if work["instruction"] == "predict":
-            res = nnet.predict(work["board"])
-
-        elif work["instruction"] == "save":
-            nnet.save_checkpoint(folder=work["folder"], filename=work["filename"])
-            res = "OK"
-
-        elif work["instruction"] == "load":
-            nnet.load_checkpoint(folder=work["folder"], filename=work["filename"])
-            res = "OK"
-
-        elif work["instruction"] == "train":
-            nnet.train(work["examples"])
-            res = "OK"
-
-        done_queue.put(res)
-
-
 def main():
-    #mp.set_start_method('spawn')
-
     g = Game()
 
-    lock = mp.Lock()
-    work_queue = mp.Queue()
-    done_queue = mp.Queue()
-    nnet = NNetQueue(work_queue, done_queue, lock)
-    mp.Process(target=NNetWorker, args=(g, nnet)).start()
+    nsync = NNetSync()
+    nnet = AtomicNNet(nsync)
+    mp.Process(target=NNetWorker, args=(g, nsync)).start()
 
-    # if args.load_model:
-    #     nnet.load_checkpoint(args.load_folder_file[0], args.load_folder_file[1])
+    if args.load_model:
+        nnet.load_checkpoint(args.load_folder_file[0], args.load_folder_file[1])
 
     c = Coach(g, nnet, args)
 
-    # if args.load_model:
-    #     print("Load trainExamples from file")
-    #     c.loadTrainExamples()
+    if args.load_model:
+        print("Load trainExamples from file")
+        c.loadTrainExamples()
 
     c.learn()
 
