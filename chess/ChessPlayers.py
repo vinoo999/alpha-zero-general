@@ -207,7 +207,6 @@ class HumanNetworkChessPlayer():
 
             # New Method: wait until user makes move on GUI (aka. browser)
             a = self.queue.get()
-            print("a: " + str(a))
 
             a_split = a.split()
             #print("a_split: " + str(a_split)) 
@@ -216,11 +215,13 @@ class HumanNetworkChessPlayer():
             #Ensure the piece locations are properly formatted (i.e "a1")
             if len(moveFrom) != 2 or len(moveTo) != 2:
                 print("Improper position format. Enter again.")
+                if self.game.webserver: self.game.result.put(None)
                 continue
 
             #Ensure the promotion piece is valid
             if len(a_split) == 3 and a_split[2] not in ['n', 'b', 'r', 'q']:
                 print("Improper promotion format. Enter again.")
+                if self.game.webserver: self.game.result.put(None)
                 continue
 
             #Go from a human-readable action (a9->a8) to an action encoding
@@ -253,6 +254,8 @@ class HumanNetworkChessPlayer():
                 break
             else:
                 print('Invalid')
+                if self.game.webserver: self.game.result.put(None)
+                continue
 
         return num
 

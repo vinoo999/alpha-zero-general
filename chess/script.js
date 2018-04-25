@@ -27,6 +27,20 @@ var onDragStart = function (source, piece, position, orientation) {
     }
 };
 
+var gameOver = function (result) {
+    message = "";
+    if (result == 1) {
+        message = "You win!";
+    } else if (result == -1) {
+        message = "You lose!";
+    } else {
+        message = "Draw!"
+    }
+
+    $("#loading-wrapper").hide();
+    alert("Game Over!  " + message);
+}
+
 var makeBestMove = function () {
 
     /* When ready to apply computer's move, request it from flask server */
@@ -35,17 +49,19 @@ var makeBestMove = function () {
     var url = location.protocol + "//" + location.hostname + ":" + location.port + "/get_move";
     var data = { "sess_id": sess_id };
     var success = (move) => {
+        move = JSON.parse(move);
+        if (move.result != null) {
+            /* Game over */
+            return gameOver(move.result);
+        }
+
         $("#condom").hide();
         $("#loading-wrapper").hide();
 
         /* Request handler */
-        move = JSON.parse(move);
         game.ugly_move(move);
         board.position(game.fen());
         renderMoveHistory(game.history());
-        if (game.game_over()) {
-            alert('Game over');
-        }
     };
 
     // Render loading modal
@@ -75,21 +91,21 @@ var sendMove = function (move, data) {
     // Build POST request
     var url = location.protocol + "//" + location.hostname + ":" + location.port + "/make_move";
     var success = (res) => {
-        //$("#loading-wrapper").hide();
 
-        if (res == "OK") {
-            removeGreySquares();
-            if (move === null) {
-                return 'snapback';
-            }
-
-            renderMoveHistory(game.history());
-            window.setTimeout(makeBestMove, 250);
+        temp = JSON.parse(res);
+        if (temp.result != null) {
+            /* Game over */
+            return gameOver(temp.result);
         }
-    }
 
-    // Render loading modal
-    //$("#loading-wrapper").show();
+        removeGreySquares();
+        if (move === null) {
+            return 'snapback';
+        }
+
+        renderMoveHistory(game.history());
+        window.setTimeout(makeBestMove, 250);
+    }
 
     // Send request to flask server 
     $.ajax({

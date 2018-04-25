@@ -53,9 +53,11 @@ class Arena():
                 print(np.where(valids>0))
                 assert valids[action] >0
             board, curPlayer = self.game.getNextState(board, curPlayer, action)
+            if self.game.webserver: self.game.result.put(None)
         if verbose:
-            assert(self.display)
-            print("Game over: Turn ", str(it), "Result ", str(self.game.getGameEnded(board, 1)))
+            res = self.game.getGameEnded(board, 1)
+            print("Game over: Turn ", str(it), "Result ", str(res))
+            if self.game.webserver: self.game.result.put(res * curPlayer)
             self.display(board)
         #Print the ending board state
         return self.game.getGameEnded(board, 1)*curPlayer

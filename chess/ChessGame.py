@@ -8,12 +8,14 @@ from Game import Game
 import numpy as np
 import copy
 from collections import defaultdict
-
+from queue import Queue
 
 class ChessGame(Game):
     def __init__(self):
         self.n = 8
         self.state_counts = defaultdict(int)
+        self.result = Queue(maxsize=1)
+        self.webserver = False
 
     def getInitBoard(self):
         # return initial board (numpy board)
