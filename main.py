@@ -14,6 +14,8 @@ args = dotdict({
     'numMCTSSims': 25,
     'arenaCompare': 30,
     'cpuct': 1,
+
+    'num_workers': 2,
     
     'checkpoint': './temp/',
     'load_model': False,
@@ -33,4 +35,14 @@ if __name__=="__main__":
     if args.load_model:
         print("Load trainExamples from file")
         c.loadTrainExamples()
+
+    # nnets = []
+    # for i in range(args.num_workers):
+    #     tmp = nn(g)
+    #     # board = g.getCanonicalForm(g.getInitBoard(), 1)
+    #     # tmp.predict(board)
+    #     # tmp.predict(board)
+    #     # tmp.predict(board)
+    #     nnets.append(tmp)
+
     c.learn()

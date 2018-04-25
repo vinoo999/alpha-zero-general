@@ -10,6 +10,10 @@ from chess.ChessUtil import decode_move
 from chess.ChessGame import display
 import copy
 
+from chess.ChessGame import ChessGame as Game
+from chess.keras.NNet import NNetWrapper as nn
+import multiprocessing as mp
+
 class Coach():
     """
     This class executes the self-play + learning. It uses the functions defined
@@ -23,6 +27,7 @@ class Coach():
         self.mcts = MCTS(self.game, self.nnet, self.args)
         self.trainExamplesHistory = []    # history of examples from args.numItersForTrainExamplesHistory latest iterations
         self.skipFirstSelfPlay = False # can be overriden in loadTrainExamples()
+        self.last_model = None
 
     def executeEpisode(self):
         """
@@ -63,6 +68,63 @@ class Coach():
             if r!=0:
                 return [(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples]
 
+
+    def mcts_worker(self, work_queue, done_queue):
+        while True:
+            # Wait for work
+            work = work_queue.get()
+            game = work["game"]
+            i = work["iter"]
+
+            # Create localized NNet so we can parallelize self-play
+            nnet = nn(game)
+
+            board = game.getCanonicalForm(game.getInitBoard(), 1)
+            nnet.predict(board)
+            nnet.predict(board)
+            nnet.predict(board)
+
+            if self.args.load_model and i == 1:
+                # Loading existing model, but no training examples found => load nnet from provided checkpoint
+                nnet.load_checkpoint(args.load_folder_file[0], args.load_folder_file[1])
+            elif i > 1: 
+                # Load last checkpoint saved to self.last_model in learn()
+                nnet.load_checkpoint(folder=self.args.checkpoint, filename=self.last_model)
+            else:
+                # No previous model and first iteration, use random nnet
+                pass
+
+            # Initialize MCTS with localized game and nnet
+            mcts = MCTS(game, nnet, self.args)
+
+            trainExamples = []
+            board = game.getInitBoard()
+            curPlayer = 1
+            episodeStep = 0
+
+            # Play game until done
+            while True:
+                episodeStep += 1
+                canonicalBoard = game.getCanonicalForm(board, curPlayer)
+
+                temp = int(episodeStep < self.args.tempThreshold)
+                pi = mcts.getActionProb(canonicalBoard, temp=temp)
+
+                sym = game.getSymmetries(canonicalBoard, pi)
+                for b,p in sym:
+                    trainExamples.append([b, curPlayer, p, None])
+
+                action = np.random.choice(len(pi), p=pi)
+                board, curPlayer = game.getNextState(board, curPlayer, action)
+
+                r = game.getGameEnded(board, curPlayer)
+
+                if r != 0:
+                    # Game done!
+                    done_queue.put([(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples])
+                    break
+
+
     def learn(self):
         """
         Performs numIters iterations with numEps episodes of self-play in each
@@ -76,24 +138,49 @@ class Coach():
             # bookkeeping
             print('------ITER ' + str(i) + '------')
             # examples of the iteration
-            if not self.skipFirstSelfPlay or i>1:
+            if not self.skipFirstSelfPlay or i > 1:
                 iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
     
                 eps_time = AverageMeter()
                 bar = Bar('Self Play', max=self.args.numEps)
                 end = time.time()
+
+                # Synchronization primitives
+                procs = []
+                work_queue = mp.Queue()
+                done_queue = mp.Queue()
+
+                # Start up workers
+                for i in range(self.args.num_workers):
+                    g = Game()
+                    tup = (work_queue, done_queue)
+                    p = mp.Process(target=self.mcts_worker, args=tup)
+                    procs.append(p)
+                    p.start()
     
+                # Add work
                 for eps in range(self.args.numEps):
-                    # TODO: Parallelize executeEpisode() calls
-                    self.mcts = MCTS(copy.deepcopy(self.game), self.nnet, self.args)   # reset search tree
-                    iterationTrainExamples += self.executeEpisode()
-    
+                    work = dict()
+                    work["eps"] = eps
+                    work["iter"] = i
+                    work["game"] = copy.deepcopy(self.game)
+                    work_queue.put(work)
+
+                # Wait for results
+                for eps in range(self.args.numEps):
+                    iterationTrainExamples += done_queue.get()
+
                     # bookkeeping + plot progress
                     eps_time.update(time.time() - end)
                     end = time.time()
                     bar.suffix  = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(eps=eps+1, maxeps=self.args.numEps, et=eps_time.avg,
                                                                                                                total=bar.elapsed_td, eta=bar.eta_td)
                     bar.next()
+
+                for p in procs:
+                    p.terminate()
+                    p.join()
+
                 bar.finish()
 
                 # save the iteration examples to the history 
@@ -129,10 +216,12 @@ class Coach():
             if pwins+nwins > 0 and float(nwins)/(pwins+nwins) < self.args.updateThreshold:
                 print('REJECTING NEW MODEL')
                 self.nnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
+                self.last_model = 'temp.pth.tar'
             else:
                 print('ACCEPTING NEW MODEL')
                 self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
-                self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')                
+                self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
+                self.last_model = 'best.pth.tar'               
 
     def getCheckpointFile(self, iteration):
         return 'checkpoint_' + str(iteration) + '.pth.tar'
