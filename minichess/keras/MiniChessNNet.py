@@ -10,7 +10,7 @@ from keras.backend.tensorflow_backend import set_session
 
 import argparse
 
-class ChessNNet():
+class MiniChessNNet():
     def __init__(self, game, args):
         # GPU Configuration
         config = tf.ConfigProto()
