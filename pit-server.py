@@ -16,15 +16,17 @@ use this script to play any two agents against each other, or play manually with
 any agent.
 """
 
-ncp = "saves/save-bc5a3cffa65"                       # Checkpoint path
-ncf = "best.pth.tar"                                 # Checkpoint file
-nca = { 'numMCTSSims': 50, 'cpuct': 1.0, 'temp': 0 } # NNet args
+ncp = "saves"                                        # Checkpoint path
+ncf = "model.pth.tar"                                # Checkpoint file
+nca = { 'numMCTSSims': 25, 'cpuct': 1.0, 'temp': 0 } # NNet args
 
 class GameWrapper():
     def __init__(self, sess_id):
         self.g  = ChessGame()                              # Initialize chess game
-        self.r  = NNetNetworkPlayer(self.g, ncp, ncf, nca) # Initialize computer player
-#       self.r  = RandomNetworkPlayer(self.g)
+        self.g.webserver = True     
+
+#       self.r  = NNetNetworkPlayer(self.g, ncp, ncf, nca) # Initialize computer player
+        self.r  = RandomNetworkPlayer(self.g)
         self.rp = self.r.play
         self.h  = HumanNetworkChessPlayer(self.g)          # Initialize human player
         self.hp = self.h.play
@@ -66,14 +68,15 @@ def new_game():
 @app.route("/get_move", methods=["GET"])
 def get_move():
     sess_id = request.args.get("sess_id")
-    move = json.dumps(games[sess_id].r.queue.get())
-    return move
+    move = games[sess_id].r.queue.get()
+    move["result"] = games[sess_id].g.result.get()
+    return json.dumps(move)
 
 @app.route("/make_move", methods=["POST"])
 def make_move():
     sess_id = request.form.get("sess_id")
     games[sess_id].h.queue.put(request.form.get("move"))
-    return "OK"
+    return json.dumps({ "result": games[sess_id].g.result.get() })
 
 @app.route("/<path:path>", methods=["GET"])
 def serve_static(path):

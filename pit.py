@@ -13,7 +13,7 @@ any agent.
 """
 g = ChessGame()
 # all players
-#rp = RandomPlayer(g).play
+rp = RandomPlayer(g).play
 #gp = GreedyOthelloPlayer(g).play
 #hp = HumanChessPlayer(g).play
 #abp = AlphaBetaPlayer(g).play
@@ -55,8 +55,8 @@ g = ChessGame()
 # args1 = dotdict({'numMCTSSims': 50, 'cpuct': 1.0})
 # mcts1 = MCTS(g, n1, args1)
 # n1p = lambda x: np.argmax(mcts1.getActionProb(x, temp=0))
-#n1 = NNetPlayer(g, "saves/save-bc5a3cffa65", "best.pth.tar", { 'numMCTSSims': 50, 'cpuct': 1.0, 'temp': 0 })
-#n1p = n1.play
+n1 = NNetPlayer(g, "saves/save-bc5a3cffa65", "best.pth.tar", { 'numMCTSSims': 50, 'cpuct': 1.0, 'temp': 0 })
+n1p = n1.play
 
 # n2 = NNet(g)
 # n2.load_checkpoint('saves/save-bc5a3cffa65','best.pth.tar')
@@ -65,5 +65,5 @@ g = ChessGame()
 # n2p = lambda x: np.argmax(mcts2.getActionProb(x, temp=0))
 #n2 = NNetPlayer(g, "saves/save-bc5a3cffa65", "best.pth.tar", { 'numMCTSSims': 50, 'cpuct': 1.0, 'temp': 0 })
 #n2p = n2.play
-#arena = Arena.Arena(n1p, n2p, g, display=display)
-#arena.playGames(2, verbose=True)
+arena = Arena.Arena(n1, rp, g, display=display, num_workers=1)
+arena.playGames(100, verbose=False)
