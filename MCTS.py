@@ -1,5 +1,7 @@
 import math
 import numpy as np
+import copy
+from random import shuffle
 EPS = 1e-8
 
 class MCTS():
@@ -69,7 +71,7 @@ class MCTS():
         s = self.game.stringRepresentation(canonicalBoard)
 
         game_end_score = self.game.getGameEnded(canonicalBoard, 1)
-         if game_end_score != 0:
+        if game_end_score != 0:
             return -game_end_score
         # if s not in self.Es:
         #     self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)

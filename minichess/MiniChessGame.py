@@ -1,8 +1,8 @@
 from __future__ import print_function
 import sys
-from MiniChessLogic import Board
-from MiniChessUtil import *
-from MiniChessConstants import *
+from .MiniChessLogic import Board
+from .MiniChessUtil import *
+from .MiniChessConstants import *
 sys.path.append('..')
 from Game import Game
 import numpy as np
@@ -119,7 +119,7 @@ class MiniChessGame(Game):
         b = Board(mcts_board=board)
 
         #Grab board rep without halfmoves and statecount for indexing dict
-        board_string = self.stringRepresentation(b)
+        board_string = self.stringRepresentation(board)
 
         #Check if a draw occured
         if b.in_stalemate(player) or b.insufficient_material(player) or b.half_moves >= 50 or self.state_counts[board_string] >= 3:

@@ -1,6 +1,6 @@
 import re
-from MiniChessConstants import *
-from MiniChessUtil import *
+from .MiniChessConstants import *
+from .MiniChessUtil import *
 import numpy as np
 
 class Board():
@@ -20,7 +20,7 @@ class Board():
         self.state_count = 0
 
         if variant == 'alamo':
-            if not mcts_board:
+            if mcts_board is None:
                 self.init_alamo()
             else: 
                 self.load(mcts_board)
@@ -42,7 +42,7 @@ class Board():
                 self.board[i,j] = 0
         return
 
-    def load(mcts_board):
+    def load(self,mcts_board):
 
         """
         Input: 

@@ -1,6 +1,6 @@
 import re
 import copy
-from MiniChessConstants import *
+from .MiniChessConstants import *
 import sys
 from itertools import permutations
 import numpy as np
