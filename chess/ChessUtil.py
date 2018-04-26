@@ -321,7 +321,6 @@ def make_pretty(chess, ugly_move):
 
 
 
-
 def evaluate_board(mcts_board, player):
     """Calculate the total score for board state from a given player's point of view"""
 
