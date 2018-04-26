@@ -28,7 +28,12 @@ class MCTS():
                    proportional to Nsa[(s,a)]**(1./temp)
         """
         for i in range(self.args.numMCTSSims):
+
+            #Deep copy so that search doesnt modify game state counts
+            tmp_game = copy.deepcopy(self.game)
             self.search(canonicalBoard)
+            self.game = tmp_game
+
 
         s = self.game.stringRepresentation(canonicalBoard)
         counts = [self.Nsa[(s,a)] if (s,a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
