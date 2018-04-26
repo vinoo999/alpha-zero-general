@@ -166,19 +166,15 @@ class MiniChessGame(Game):
             canonicalBoard = np.fliplr(canonicalBoard)
 
             #Attach the last row of game info back
-            canonicalBoard = np.vstack([canonicalBoard, board[6,:]])
+            canonicalBoard = np.vstack([canonicalBoard, board_copy[6,:]])
 
-
-            #NO NEED TO DEEP COPY??????
-
-            #Swap king positions
-            #canonicalBoard[6,0] = #encode_square: Takes algebraic expression to number
-            #canonicalBoard[6,1] = #encode_square
+            #Swap king positions in the last row
+            orig_white_king_pos = canonicalBoard[6,0] 
+            canonicalBoard[6,0] = canonicalBoard[6,1]
+            canonicalBoard[6,1] = orig_white_king_pos
 
             #Update current player
-            #canonicalBoard[6,2] = player
-
-
+            canonicalBoard[6,2] = player
 
             return canonicalBoard
 
