@@ -531,7 +531,7 @@ class AlphaBetaNetworkPlayer():
 
         #Convert the move to a network-compatible representation
         move = decode_move(best_move)
-        print("decoded best move: " + str(move))
+        #print("decoded best move: " + str(move))
 
 
         b = Board(mcts_board=board)
@@ -539,8 +539,8 @@ class AlphaBetaNetworkPlayer():
 
         ugly_move = None
         for i in range(len(moves)):
-            print("algebraic")
-            print(algebraic(moves[i]['from']))
+            #print("algebraic")
+            #print(algebraic(moves[i]['from']))
 
             if (move['from'] == algebraic(moves[i]['from']) and move['to'] == algebraic(moves[i]['to']) and \
                 (('promotion' not in moves[i].keys()) or move['promotion'] == moves[i]['promotion'])):

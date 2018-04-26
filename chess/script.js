@@ -34,31 +34,22 @@ var selectPlayers = function () {
     } else if (player1 != "human" && player2 == "human") {
         game_mode = "RH"
     } else {
-        game_mode == "RR"
+        game_mode = "RR"
     }
 
     var cfg = {
         draggable: true,
         position: 'start',
         onDragStart: onDragStart,
-        onDrop: null,
+        onDrop: onDrop,
         onMouseoutSquare: onMouseoutSquare,
         onMouseoverSquare: onMouseoverSquare,
         onSnapEnd: onSnapEnd
     };
 
-    if (game_mode == "HH") {
-        cfg.onDrop = onDrop;
-    } 
-    else if (game_mode == "HR") {
-        cfg.onDrop = onDrop;
-    }
-    else if (game_mode == "RH") {
-        makeBestMove();
-        cfg.onDrop = onDrop;
-    }
-    else {
-        makeBestMove();
+    // Random player so no need for onDrop handler
+    if (game_mode == "RR") {
+        cfg.onDrop = null;
     }
 
     board = ChessBoard('board', cfg);
@@ -67,12 +58,21 @@ var selectPlayers = function () {
     var url = location.protocol + "//" + location.hostname + ":" + location.port + "/new_game";
     var data = { "player1": player1, "player2": player2, "game_mode": game_mode }
     var success = (id) => {
-        $("#condom").hide();
         $("#loading-wrapper").hide();
         $("#loading-text").text("Thinking...");
 
         // Set our session id
         sess_id = id;
+
+        // Start the game
+        if (game_mode == "RH" || game_mode == "RR") {
+            $("#loading-wrapper").show();
+            makeBestMove();
+        } else {
+            $("#condom").hide();
+
+            // Wait for human input...
+        }
     };
 
     $.ajax({
@@ -108,10 +108,6 @@ var makeBestMove = function () {
     var data = { "sess_id": sess_id, "turn": game.turn() };
     var success = (move) => {
         move = JSON.parse(move);
-        if (move.result != null) {
-            /* Game over */
-            return gameOver(move.result);
-        }
 
         $("#condom").hide();
         $("#loading-wrapper").hide();
@@ -120,6 +116,12 @@ var makeBestMove = function () {
         game.ugly_move(move);
         board.position(game.fen());
         renderMoveHistory(game.history());
+
+        if (move.result != null) {
+            /* Game over */
+            $("#condom").show();
+            return gameOver(move.result);
+        }
 
         if (game_mode == "RR") {
             return window.setTimeout(makeBestMove, 250);
@@ -153,12 +155,7 @@ var sendMove = function (move, data) {
     // Build POST request
     var url = location.protocol + "//" + location.hostname + ":" + location.port + "/make_move";
     var success = (res) => {
-
         temp = JSON.parse(res);
-        if (temp.result != null) {
-            /* Game over */
-            return gameOver(temp.result);
-        }
 
         removeGreySquares();
         if (move === null) {
@@ -166,6 +163,12 @@ var sendMove = function (move, data) {
         }
 
         renderMoveHistory(game.history());
+
+        if (temp.result != null) {
+            /* Game over */
+            $("#condom").show();
+            return gameOver(temp.result);
+        }
 
         if (game_mode != "HH") {
             window.setTimeout(makeBestMove, 250);
