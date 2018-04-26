@@ -140,8 +140,10 @@ class Board():
             if self.in_check(player):
                 self.do_move({'from':to_square, 'to':from_square, 'promotion':None})
                 self.board[r2,f2] = temp
+                self.total_moves -= 2
                 continue
             self.do_move({'from':to_square, 'to':from_square, 'promotion':None})
+            self.total_moves -= 2
             self.board[r2,f2] = temp
             legal_moves.append(move)
 
@@ -186,6 +188,23 @@ class Board():
         else: 
             return False
 
+    def insufficient_material(self, color):
+        num_pieces = 0
+        for i in range(self.board.shape[0]):
+            for j in range(self.board.shape[1]):
+                if self.board[i,j]:
+                    num_pieces += 1
+        if num_pieces == 2:
+            return True
+        else:
+            return False
+
+    def in_threefold_repitition(self, color):
+        if self.state_count == 3:
+            return True
+        else:
+            return False
+
     def in_check(self, color):
         '''returns if the player (1 for white, -1 for black) is in check'''
         my_king = self.kings[color]
@@ -207,11 +226,19 @@ class Board():
         value = self.board[from_r, from_f]
         captured = self.board[to_r, to_f]
         captured, _ = decode_piece(captured, get_color=True)
+        piece, color = decode_piece(value, get_color=True)
         if move['promotion']:
-            piece, color = decode_piece(value, get_color=True)
             value = map_piece(move['promotion'], color)
         self.board[to_r, to_f] = value
         self.board[from_r, from_f] = 0
+        self.turn = -self.turn
+        self.total_moves += 1
+
+        if piece == PAWN or captured:
+            self.half_moves = 0
+        else:
+            self.half_moves += 1
+
         return captured
 
 
