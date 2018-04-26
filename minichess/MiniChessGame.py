@@ -59,14 +59,16 @@ class MiniChessGame(Game):
             nextPlayer: player who plays in the next turn (should be -player)
         """
 
+        board = Board(mcts=board)
+
         #Build dictionary holding algebraic expressions {from:pos1, to:pos2, promo: optional)
         move = decode_move(action, player)
 
         #Perform the move on the game board
-        game.do_move(move)
+        board.do_move(move)
 
         #Grab the new mcts board
-        next_board = game.get_board_mcts()
+        next_board = board.get_board_mcts()
 
         #Remove state info for hashing the state
         self.state_counts[self.stringRepresentation(next_board)] += 1
@@ -152,7 +154,8 @@ class MiniChessGame(Game):
         """
 
         if player == 1:
-            return board
+
+            return copy.deepcopy(board)
         else:
             #Create a deep copy of board so as to not impact the original
             board_copy = copy.deepcopy(board)
