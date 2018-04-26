@@ -16,7 +16,7 @@ args = dotdict({
     'updateThreshold': 0.6,     # Percent minimum number of wins during evaluation to accept new model
     'maxlenOfQueue': 200000,    # Max number of examples in training data
     'numMCTSSims': 150,         # Number of MCTS simulations per move
-    'arenaCompare': 30,         # Number of games in evaluation step
+    'arenaCompare': 25,         # Number of games in evaluation step
     'cpuct': 1,                 # MCTS exploration vs exploitation parameter
 
     'mcts_workers': 2,

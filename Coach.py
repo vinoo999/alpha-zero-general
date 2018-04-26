@@ -168,10 +168,11 @@ class Coach():
                 for ep in range(self.args.numEps):
                     runtime, examples = done_queue.get()
                     
+                    # Drop 80% of draws
                     to_add = False
-                    loss_rate = 0.9
+                    loss_rate = 0.8
                     if abs(examples[0][2]) != 1:
-                        if random.randint(1,int(loss_rate*100)) > loss_rate*100:
+                        if random.randint(1, int(loss_rate * 100)) > loss_rate * 100:
                             to_add = True
                     else:
                         to_add = True
