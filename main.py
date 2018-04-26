@@ -18,7 +18,7 @@ args = dotdict({
     'numMCTSSims': 100,         # Number of MCTS simulations per move
     'arenaCompare': 25,         # Number of games in evaluation step
     'cpuct': 1,                 # MCTS exploration vs exploitation parameter
-    'filter_draw_rate': 0,
+    'filter_draw_rate': 0.8,
 
     'mcts_workers': 8,
     'nnet_workers': 2,
@@ -26,14 +26,20 @@ args = dotdict({
     'checkpoint': './temp/',
     'load_model': False,
     'load_folder_file': ('saves/','best.pth.tar'),
-    'numItersForTrainExamplesHistory': 20,
-
+    'numItersForTrainExamplesHistory': 20
 })
 
 def main():
+    # Make sure OS supports synchronization primitives required for
+    # Python 3 multiprocessing Queues, else don't use parallelization
+    os_supported = check_platform()
+    if os_supported == False:
+        args.mcts_workers = 1
+        args.nnet_workers = 1
+
     g = Game()
 
-    nnet = NNetManager(args.nnet_workers)
+    nnet = NNetManager(args.nnet_workers, os_supported)
     for i in range(args.nnet_workers):
         mp.Process(target=NNetWorker, args=(g, nnet.nsync(i), i)).start()
 

@@ -58,10 +58,12 @@ def NNetWorker(game, nsync, i):
 
 
 class NNetManager():
-    def __init__(self, nnet_workers):
+    def __init__(self, nnet_workers, os_supported):
         self.global_lock = mp.Lock()
         self.nsyncs = []
         self.curr = 0
+
+        self.os_supported = os_supported
 
         assert(nnet_workers > 0)
 
@@ -126,7 +128,8 @@ class NNetManager():
 
             # Check every item currently in the queue
             done_queue = self.nsyncs[q_idx].done_queue
-            for i in range(done_queue.qsize()):
+            size = done_queue.qsize() if self.os_supported else 1 # Workaround for non-UNIX systems
+            for i in range(size):
                 tup = done_queue.get()
 
                 # Check if item is our item (ie. if the ids match)

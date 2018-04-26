@@ -22,3 +22,18 @@ class ParallelRuntimes():
 
     def eta(self, completed, total):
         return self.avg() * (total - completed) / self.max_len
+
+
+def check_platform():
+    from sys import platform
+
+    if platform == "linux" or platform == "linux2":
+        return True
+    elif platform == "darwin":
+        print(" *** WARNING *** MacOS does not support the necessary synchronization primitives for Python 3 multiprocessing queues. Defaulting to 1 worker. *** WARNING *** ")
+    elif platform == "win32":
+        print(" *** WARNING *** Not tested on Windows. Stability not guaranteed with multiple workers. *** WARNING *** ")
+    else:
+        print(" *** WARNING *** Unknown platform. Stability not guaranteed with multiple workers. *** WARNING *** ")
+
+    return False
