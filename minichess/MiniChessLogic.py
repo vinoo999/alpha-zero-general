@@ -1,15 +1,3 @@
-'''
-Author: Eric P. Nichols
-Date: Feb 8, 2008.
-Board class.
-Board data:
-  1=white, -1=black, 0=empty
-  first dim is column , 2nd is row:
-     pieces[1][7] is the square in column 2,
-     at the opposite end of the board in row 8.
-Squares are stored and manipulated as (x,y) tuples.
-x is the column, y is the row.
-'''
 import re
 from MiniChessConstants import *
 from MiniChessUtil import *
@@ -27,6 +15,10 @@ class Board():
         self.variant = variant
         self.kings = {}
         self.turn = 1
+        self.half_moves = 0
+        self.total_moves = 0
+        self.state_count = 0
+
         if variant == 'alamo':
             if not mcts_board:
                 self.init_alamo()
@@ -51,10 +43,44 @@ class Board():
         return
 
     def load(mcts_board):
+
+        """
+        Input: 
+            mcts_board: a mcts np array board
+        Output: 
+            set all parameters of the board
+        """
+
         self.board = mcts_board
 
+        last_row = mcts_board[6,:]
+
+        self.kings[1], self.kings[-1] = last_row[0], last_row[1]
+        self.turn = last_row[2]
+        self.half_moves = last_row[3]
+        self.total_moves = last_row[4]
+        self.state_count = last_row[5]
+
+
     def get_board_mcts(self):
-        return self.board
+        """
+        Return:
+            A modifed board (mcts) that has game state knowledge appended as it's last row
+            Last row is as follows:
+                1) position white king  2) position black king,
+                3) current player color 4) number of half moves
+                5) number of full moves 6) board state count
+        """
+
+        #Convert algebraic position of the white/black king to int
+        white_king_pos, black_king_pos = encode_square(self.kings[1]), encode_square(self.kings[-1])
+
+        last_row = np.array([white_king_pos, black_king_pos,
+                             self.turn, self.half_moves,
+                             self.total_moves, self.state_count
+                            ])
+
+        return np.vstack([self.board, last_row])
 
 
     def _get_pseudo_legal_moves(self, player):
