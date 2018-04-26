@@ -125,11 +125,11 @@ class Coach():
         only if it wins >= updateThreshold fraction of games.
         """
 
-        for i in range(1, self.args.numIters+1):
+        for i in range(1, self.args.numIters + 1):
             # bookkeeping
             print('------ITER ' + str(i) + '------')
             # examples of the iteration
-            if not self.skipFirstSelfPlay or i>1:
+            if not self.skipFirstSelfPlay or i > 1:
                 iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
     
                 tracker = ParallelRuntimes(self.args.mcts_workers)
@@ -143,8 +143,8 @@ class Coach():
                 print("[Master] Spawning Workers...")
 
                 # Spawn workers
-                for i in range(self.args.mcts_workers):
-                    tup = (work_queue, done_queue, i)
+                for ep in range(self.args.mcts_workers):
+                    tup = (work_queue, done_queue, ep)
                     proc = mp.Process(target=self.coach_worker, args=tup)
                     proc.start()
 
@@ -163,13 +163,13 @@ class Coach():
                 print("[Master] Waiting for results...")
 
                 # Wait for results to come in
-                for i in range(self.args.numEps):
+                for ep in range(self.args.numEps):
                     runtime, examples = done_queue.get()
                     iterationTrainExamples += examples
 
                     tracker.update(runtime)
                     bar.suffix = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(
-                                  eps=i, maxeps=self.args.numEps, et=tracker.avg(), total=bar.elapsed_td, 
+                                  eps=ep, maxeps=self.args.numEps, et=tracker.avg(), total=bar.elapsed_td, 
                                   eta=tracker.eta(i, self.args.numEps))
                     bar.next()
 
