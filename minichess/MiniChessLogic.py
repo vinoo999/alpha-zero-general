@@ -2,6 +2,7 @@ import re
 from .MiniChessConstants import *
 from .MiniChessUtil import *
 import numpy as np
+import copy
 
 class Board():
 
@@ -50,7 +51,7 @@ class Board():
         Output: 
             set all parameters of the board
         """
-
+        mcts_board = copy.deepcopy(mcts_board)
         self.board = mcts_board[0:6, :]
 
         last_row = mcts_board[6,:]
@@ -138,6 +139,9 @@ class Board():
             temp = self.board[r2,f2]
             self.do_move({'from':from_square, 'to':to_square, 'promotion':None})
             if self.in_check(player):
+                # print("IN CHECK")
+                # print(ascii(self.board))
+                # print("Player: ", player)
                 self.do_move({'from':to_square, 'to':from_square, 'promotion':None})
                 self.board[r2,f2] = temp
                 self.total_moves -= 2
@@ -211,6 +215,8 @@ class Board():
         legal_moves = self._get_pseudo_legal_moves(-color)
         for move in legal_moves:
             if move['to'] == my_king:
+                # print("******")
+                # print(move['from'], move['to'])
                 return True
         return False
 
@@ -238,6 +244,9 @@ class Board():
             self.half_moves = 0
         else:
             self.half_moves += 1
+
+        if piece == KING:
+            self.kings[color] = algebraic(to_r,to_f)
 
         return captured
 

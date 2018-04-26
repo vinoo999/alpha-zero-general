@@ -6,6 +6,7 @@ from pytorch_classification.utils import Bar, AverageMeter
 import time, os, sys
 from pickle import Pickler, Unpickler
 from random import shuffle
+from minichess.MiniChessGame import display
 
 
 class Coach():
@@ -46,6 +47,7 @@ class Coach():
             canonicalBoard = self.game.getCanonicalForm(board,self.curPlayer)
             temp = int(episodeStep < self.args.tempThreshold)
 
+            # display(canonicalBoard)
             pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
             sym = self.game.getSymmetries(canonicalBoard, pi)
             for b,p in sym:
@@ -57,6 +59,10 @@ class Coach():
             r = self.game.getGameEnded(board, self.curPlayer)
 
             if r!=0:
+                # print("****** GAME OVER *****")
+                # display(board)
+                # print(self.curPlayer)
+                print(r)
                 return [(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples]
 
     def learn(self):
