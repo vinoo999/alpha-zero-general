@@ -59,3 +59,8 @@ ALAMO_INIT_STATE = {
     'a5': (BLACK, PAWN), 'b5': (BLACK, PAWN), 'c5': (BLACK, PAWN), 'd5': (BLACK, PAWN), 'e5': (BLACK, PAWN), 'f5': (BLACK, PAWN), 
     'a6': (BLACK, ROOK), 'b6': (BLACK, KNIGHT), 'c6': (BLACK, QUEEN), 'd6': (BLACK, KING), 'e6': (BLACK, KNIGHT), 'f6': (BLACK,ROOK)
 }
+
+BOARD_SIZE = {
+    'alamo': (6,6)
+}
+
