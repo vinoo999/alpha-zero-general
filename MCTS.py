@@ -63,11 +63,14 @@ class MCTS():
 
         s = self.game.stringRepresentation(canonicalBoard)
 
-        if s not in self.Es:
-            self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
-        if self.Es[s]!=0:
-            # terminal node
-            return -self.Es[s]
+        game_end_score = self.game.getGameEnded(canonicalBoard, 1)
+         if game_end_score != 0:
+            return -game_end_score
+        # if s not in self.Es:
+        #     self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
+        # if self.Es[s]!=0:
+        #     # terminal node
+        #     return -self.Es[s]
 
         if s not in self.Ps:
             # leaf node
@@ -95,7 +98,9 @@ class MCTS():
         best_act = -1
 
         # pick the action with the highest upper confidence bound
-        for a in range(self.game.getActionSize()):
+        all_actions = list(range(self.game.getActionSize()))
+        shuffle(all_actions)
+        for a in all_actions:
             if valids[a]:
                 if (s,a) in self.Qsa:
                     u = self.Qsa[(s,a)] + self.args.cpuct*self.Ps[s][a]*math.sqrt(self.Ns[s])/(1+self.Nsa[(s,a)])
