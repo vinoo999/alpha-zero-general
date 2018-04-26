@@ -55,7 +55,7 @@ class Board():
 
         last_row = mcts_board[6,:]
 
-        self.kings[1], self.kings[-1] = last_row[0], last_row[1]
+        self.kings[1], self.kings[-1] = decode_square(last_row[0]), decode_square(last_row[1])
         self.turn = last_row[2]
         self.half_moves = last_row[3]
         self.total_moves = last_row[4]

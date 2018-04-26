@@ -59,7 +59,7 @@ class MiniChessGame(Game):
             nextPlayer: player who plays in the next turn (should be -player)
         """
 
-        board = Board(mcts=board)
+        board = Board(mcts_board=board)
 
         #Build dictionary holding algebraic expressions {from:pos1, to:pos2, promo: optional)
         move = decode_move(action, player)
@@ -95,7 +95,7 @@ class MiniChessGame(Game):
 
         legal_moves = b.get_legal_moves(player)
 
-        for move in legalMoves:
+        for move in legal_moves:
 
             #Pass move dict into encode_move to return the valid move's index
             move_index = encode_move(move, player)
@@ -190,9 +190,9 @@ class MiniChessGame(Game):
             canonical_board[6,1] = wkp
 
             #Update current player
-            canonicalBoard[6,2] = player
+            canonical_board[6,2] = player
 
-            return canonicalBoard
+            return canonical_board
 
     def getSymmetries(self, board, pi):
         """
