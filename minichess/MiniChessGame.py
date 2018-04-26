@@ -160,8 +160,8 @@ class MiniChessGame(Game):
             #Create a deep copy of board so as to not impact the original
             board_copy = copy.deepcopy(board)
 
-            #Board without last row holding game info
-            just_board = board_copy[0:5,:] * -1
+            #Board without last row holding game info (exclusive 0:6)
+            just_board = board_copy[0:6,:] * -1
 
             #Change board orientation for black player
             canonical_board = np.flipud(just_board)
