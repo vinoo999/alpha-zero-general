@@ -222,7 +222,7 @@ class Coach():
 
             nmcts = MCTS(copy.deepcopy(self.game), self.nnet, self.args)
 
-            print('PITTING AGAINST PREVIOUS VERSION')
+            print('PITTING AGAINST PREVIOUS VERSION (player1 = previous, player2 = new)')
             arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
                           lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), 
                           self.game, num_workers=self.args.mcts_workers)

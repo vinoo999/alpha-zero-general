@@ -221,5 +221,5 @@ class Arena():
 
         bar.finish()
 
-        print("Wins: " + str(oneWon) + ", Loses: "+str(twoWon)+", Draws: "+str(draws))
+        print("Player 1 Won: " + str(oneWon) + ", Player 2 Won: "+str(twoWon)+", Draws: "+str(draws))
         return oneWon, twoWon, draws
