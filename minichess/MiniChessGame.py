@@ -126,7 +126,7 @@ class MiniChessGame(Game):
             return 1e-2
 
         #Check if current player is in checkmate (loss)
-        if b.in_checkmate(color):
+        if b.in_checkmate(player):
             return -1
 
         #Check if other player is in checkmate (win)
