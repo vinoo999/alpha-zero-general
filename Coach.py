@@ -97,7 +97,7 @@ class Coach():
             episodeStep = 0
 
             while True:
-                print("Worker: {}, Episode Step: {}".format(i, episodeStep))
+                #print("Worker: {}, Episode Step: {}".format(i, episodeStep))
                 episodeStep += 1
                 canonicalBoard = game.getCanonicalForm(board, curPlayer)
 
