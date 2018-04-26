@@ -16,7 +16,14 @@ def translate(pos, variant='alamo'):
         return (r,f)
 
 def algebraic(r,f, variant='alamo'):
-    ''' take position in r,f format and return algebraic (a1) format'''
+    """
+    Input:
+        r: piece rank
+        f: piece file
+    Return:
+        algebraic incoding ("a1") of the piece's position
+    """
+
     try:
         if variant == 'alamo':
             ranks = ['1','2','3','4','5','6']
@@ -34,7 +41,15 @@ def map_piece(piece, player):
     return player * PIECE_MAPPING[piece]
 
 def decode_piece(num, get_color = False):
-    '''take a number +/-1,2,3,5,9,100 and return the piece associated'''
+    """
+        Input:
+            num: a number +/-1,2,3,5,9,100 representing a game piece
+        Return:
+            if get_color flag:
+                    return (piece's lowercase character ("q"), and it's color)
+            else:
+                    return piece's character, upper for white, lower for black
+    """
     if get_color:
         if num == 0:
             return (None, None)
