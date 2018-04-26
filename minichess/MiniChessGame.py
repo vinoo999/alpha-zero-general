@@ -58,17 +58,16 @@ class MiniChessGame(Game):
             nextBoard: board after applying action
             nextPlayer: player who plays in the next turn (should be -player)
         """
-
-        board = Board(mcts_board=board)
+        b = Board(mcts_board=board)
 
         #Build dictionary holding algebraic expressions {from:pos1, to:pos2, promo: optional)
         move = decode_move(action, player)
 
         #Perform the move on the game board
-        board.do_move(move)
+        b.do_move(move)
 
         #Grab the new mcts board
-        next_board = board.get_board_mcts()
+        next_board = b.get_board_mcts()
 
         #Remove state info for hashing the state
         self.state_counts[self.stringRepresentation(next_board)] += 1
@@ -95,6 +94,9 @@ class MiniChessGame(Game):
 
         legal_moves = b.get_legal_moves(player)
 
+        # print(player)
+        # print(legal_moves)
+        # display(board)
         for move in legal_moves:
 
             #Pass move dict into encode_move to return the valid move's index

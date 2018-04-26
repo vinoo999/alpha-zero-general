@@ -2,6 +2,8 @@ import math
 import numpy as np
 import copy
 from random import shuffle
+from minichess.MiniChessGame import display
+from minichess.MiniChessUtil import *
 EPS = 1e-8
 
 class MCTS():
@@ -33,11 +35,14 @@ class MCTS():
 
             #Deep copy so that search doesnt modify game state counts
             tmp_game = copy.deepcopy(self.game)
+            # print("Search from getactionprob")
             self.search(canonicalBoard)
             self.game = tmp_game
 
 
         s = self.game.stringRepresentation(canonicalBoard)
+        # print(s)
+        # print(canonicalBoard)
         counts = [self.Nsa[(s,a)] if (s,a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
 
         if temp==0:
@@ -67,11 +72,16 @@ class MCTS():
         Returns:
             v: the negative of the value of the current canonicalBoard
         """
+        # print("SEARCH CALLED")
+        # display(canonicalBoard)
 
         s = self.game.stringRepresentation(canonicalBoard)
 
         game_end_score = self.game.getGameEnded(canonicalBoard, 1)
         if game_end_score != 0:
+            # print("Game End: *********************************")
+            # display(canonicalBoard)
+            # print(game_end_score)
             return -game_end_score
         # if s not in self.Es:
         #     self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
@@ -81,6 +91,7 @@ class MCTS():
 
         if s not in self.Ps:
             # leaf node
+            # print("leaf node")
             self.Ps[s], v = self.nnet.predict(canonicalBoard)
             valids = self.game.getValidMoves(canonicalBoard, 1)
             self.Ps[s] = self.Ps[s]*valids      # masking invalid moves
@@ -119,9 +130,19 @@ class MCTS():
                     best_act = a
 
         a = best_act
+        # print("VALID MOVES: *****************")
+        # print(np.where(valids == 1))
+        # print(a,decode_move(a,1))
+        # display(canonicalBoard)
+        # print("***************************************")
         next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
+        # print("Next state")
+        # display(next_s)
         next_s = self.game.getCanonicalForm(next_s, next_player)
+        # display(next_s)
+        # print("*(***************************************")
 
+        # print("Calling search from search")
         v = self.search(next_s)
 
         if (s,a) in self.Qsa:

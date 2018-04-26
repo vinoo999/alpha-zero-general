@@ -87,8 +87,8 @@ def reverse_square(pos, variant='alamo'):
     '''
     r,f = translate(pos)
     r_limit, f_limit = BOARD_SIZE[variant]
-    r_new = r_limit - r
-    f_new = f_limit - f
+    r_new = r_limit - r -1
+    f_new = f_limit - f -1
     return algebraic(r_new, f_new, variant)
 
 
@@ -183,7 +183,7 @@ def get_possible_promotions(from_square, to_square, piece, color, variant='alamo
         if (color == WHITE and r==1 and r2==0) or \
         (color == BLACK and r==num_ranks-2 and r2==num_ranks-1):
             if variant == 'alamo':
-                possible_promos = ['k','r','q']
+                possible_promos = ['n','r','q']
             return possible_promos
         else:
             return [None]
