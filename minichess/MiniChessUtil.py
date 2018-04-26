@@ -34,6 +34,26 @@ def algebraic(r,f, variant='alamo'):
         print("Get wrkt")
         sys.exit()
 
+def encode_square(pos, variant='alamo'):
+    '''
+    Input: Algebraic position
+    Output: Number value of square
+    '''
+    r,f = translate(pos)
+    r_limit = BOARD_SIZE['alamo'][0]
+    return r*r_limit + f
+
+def decode_square(num, variant='alamo'):
+    '''
+    Input: Number value of square
+    Output: Algebraic position
+    '''
+    r_limit = BOARD_SIZE['alamo'][0]
+    r = num // r_limit
+    f = num % r_limit
+    return(algebraic(r,f,variant))
+
+
 def map_piece(piece, player):
     ''' piece is p,b,k,n,q
     player is 1 for white, -1 for black
@@ -64,8 +84,14 @@ def decode_piece(num, get_color = False):
             return PIECE_DECODER[-1*num].lower()
 
 def encode_move(from_pos, to_pos, promotion=None, variant='alamo'):
-    r,f = translate(pos)
-    pass
+    if not promotion:
+        square1 = encode_square(from_pos, variant)
+        square2 = encode_square(to_pos, variant)
+        r_limit, f_limit = BOARD_SIZE['alamo'][0]
+        return r_limit*f_limit*square1 + square2
+    else:
+        r1,f1 = translate(from_pos)
+        r2,f2 = translate(to_pos)
 
 def decode_move(num, variant='alamo'):
     pass
