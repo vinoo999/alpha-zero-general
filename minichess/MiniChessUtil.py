@@ -53,27 +53,22 @@ def evaluate_board(board, player):
         score: score of the board relative to the current player
     """
     score = 0
-
     num_rows, num_cols = board.shape(board)
 
     for row in range(num_rows):
         for col in range(num_cols):
 
-            piece_key = abs(board[row,col])
+            piece_abs_value = abs(board[row,col])
 
             #Ignore all positions on the board without a piece
-            if piece_key == 0:
+            if piece_abs_value == 0:
                 continue
-
-            #Grab the letter representation of the piece with it's key
-            piece = PIECE_DECODER[piece_key]
 
             #Add the relative value of the piece
             piece_color = -1 if board[row,col] < 0 else 1
-            score += PIECE_MAPPING[piece] * piece_color * player
+            score += piece_abs_value * piece_color * player
 
     return score
-   
 
 
 
