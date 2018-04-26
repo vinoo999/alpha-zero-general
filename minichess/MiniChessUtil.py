@@ -136,21 +136,23 @@ def decode_move(num, color, variant='alamo'):
 
         f1 = first_encoding//2
         rank_abbrv = first_encoding % 2
-        r1 = 
+        r1 = 1 if rank_abbrv == 0 else r_limit-2
+        r2 = 0 if rank_abbrv == 0 else r_limit-1
 
         promo_integer = second_encoding//4
+        promotion = [QUEEN,ROOK,KNIGHT,BISHOP][promo_integer]
         direction = second_encoding % 4
         f2 = f1 + direction - 1
 
-
-
+        from_pos = algebraic(r1,f1)
+        to_pos = algebraic(r2,f2)
 
     if color == -1: # Player is Black
         from_pos = reverse_square(from_pos, variant)
         to_pos = reverse_square(to_pos, variant)
 
     move = {'from': from_pos, 'to': to_pos, 'promotion': promotion}
-    pass
+    return move
 
 def enumerate_all_pos(variant='alamo'):
 
