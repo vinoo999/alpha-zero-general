@@ -1,8 +1,8 @@
 from __future__ import print_function
 import sys
-from .MiniChessLogic import Board
-from .MiniChessUtil import *
-from .MiniChessConstants import *
+from MiniChessLogic import Board
+from MiniChessUtil import *
+from MiniChessConstants import *
 sys.path.append('..')
 from Game import Game
 import numpy as np
@@ -115,7 +115,7 @@ class MiniChessGame(Game):
     def getCanonicalForm(self, board, player):
         """
         Input:
-            board: current board
+            board: current board in MCTS Form
             player: current player (1 or -1)
 
         Returns:
@@ -126,7 +126,36 @@ class MiniChessGame(Game):
                             board as is. When the player is black, we can invert
                             the colors and return the board.
         """
-        pass
+
+        if player == 1:
+            return board
+        else:
+            #Create a deep copy of board so as to not impact the original
+            board_copy = copy.deepcopy(board)
+
+            #Board without last row holding game info
+            just_board = board_copy[0:5,:] * -1
+
+            #Change board orientation for black player
+            canonicalBoard = np.flipud(just_board)
+            canonicalBoard = np.fliplr(canonicalBoard)
+
+            #Attach the last row of game info back
+            canonicalBoard = np.vstack([canonicalBoard, board[6,:]])
+
+
+            #NO NEED TO DEEP COPY??????
+
+            #Swap king positions
+            #canonicalBoard[6,0] = #encode_square: Takes algebraic expression to number
+            #canonicalBoard[6,1] = #encode_square
+
+            #Update current player
+            #canonicalBoard[6,2] = player
+
+
+
+            return canonicalBoard
 
     def getSymmetries(self, board, pi):
         """
@@ -153,7 +182,7 @@ class MiniChessGame(Game):
         """
 
         #Deep copy the board to prevent modifying original
-        board_copy = mcts_board.deepcopy(board)
+        board_copy = copy.deepcopy(board)
 
         #Remove half_moves info
         board_copy[6,4] = 0
