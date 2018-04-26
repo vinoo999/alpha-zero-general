@@ -16,9 +16,13 @@ use this script to play any two agents against each other, or play manually with
 any agent.
 """
 
-ncp_new = "saves/save-bc5a3cffa65"                        # Checkpoint path
-ncf_new = "best.pth.tar"                                  # Checkpoint file
-nca_new = { 'numMCTSSims': 100, 'cpuct': 1.0, 'temp': 0 } # NNet args
+ncp_new = "saves/"                                         # Checkpoint path
+ncf_new = "checkpoint_2.pth.tar"                           # Checkpoint file
+nca_new = { 'numMCTSSims': 500, 'cpuct': 1.0, 'temp': 0 }  # NNet args
+
+#ncp_new = "saves/"                                         # Checkpoint path
+#ncf_new = "checkpoint_2.pth.tar"                           # Checkpoint file
+#nca_new = { 'numMCTSSims': 1000, 'cpuct': 1.0, 'temp': 0 } # NNet args
 
 ncp_old = "saves/save-bc5a3cffa65"                        # Checkpoint path
 ncf_old = "best.pth.tar"                                  # Checkpoint file
@@ -33,7 +37,6 @@ class GameWrapper():
         self.gm = gm
 
         if p1 == "human":
-            print("Initializing human...")
             self.player1 = HumanNetworkChessPlayer(self.g, self.result_queue)
         elif p1 == "nnet-new":
             self.player1 = NNetNetworkPlayer(self.g, ncp_new, ncf_new, nca_new)
@@ -53,7 +56,6 @@ class GameWrapper():
         elif p2 == "alpha-beta":
             self.player2 = AlphaBetaNetworkPlayer(self.g)
         else:
-            print("Initializing random...")
             self.player2 = RandomNetworkPlayer(self.g)
 
         self.p1p = self.player1.play
