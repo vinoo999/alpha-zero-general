@@ -36,6 +36,10 @@
 	display: none;
 }
 
+#loading-wrapper {
+	top: 70%;
+}
+
 .modal {
 	position: relative;
 	width: 250px;
