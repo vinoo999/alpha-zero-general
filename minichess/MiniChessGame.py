@@ -44,7 +44,7 @@ class MiniChessGame(Game):
             + 6*2*3*4:12    spaces to promote into
                             each has 3 spaces from-- forward, left, right)
                             and 4 promotion piece types
-                            
+
             + 1:            do nothing
         """
         return 6**4 + 6*2*3*4 + 1
@@ -86,7 +86,31 @@ class MiniChessGame(Game):
                small non-zero value for draw.
                
         """
-        pass
+
+        b = Board(mcts_board=board)
+
+        #Grab board rep without halfmoves and statecount for indexing dict
+        board_string = self.stringRepresentation(b)
+
+        #Check if a draw occured
+        if b.in_stalemate() or b.insufficient_material() or b.half_moves >= 50 or self.state_counts[board_string] >= 3:
+            return 1e-2
+
+        #Check if current player is in checkmate (loss)
+        if b.in_checkmate():
+            return -1
+
+        #Check if other player is in checkmate (win)
+        b.turn = swap_color(b.turn)
+        if b.in_checkmate():
+            return 1
+
+        #Continue playing, game isnt over yet
+        return 0
+
+
+
+
 
     def getCanonicalForm(self, board, player):
         """
@@ -120,13 +144,24 @@ class MiniChessGame(Game):
     def stringRepresentation(self, board):
         """
         Input:
-            board: current board
+            board: deep copied board so our changes here dont affect original
 
         Returns:
             boardString: a quick conversion of board to a string format.
+                         Removes some variable information for hashing.
                          Required by MCTS for hashing.
         """
-        pass
+
+        #Deep copy the board to prevent modifying original
+        board_copy = mcts_board.deepcopy(board)
+
+        #Remove half_moves info
+        board_copy[6,4] = 0
+        #Remove state_count info
+        board_copy[6,5] = 0
+        
+        return board_copy.tostring()
+        
 
 
 
@@ -140,15 +175,6 @@ class MiniChessGame(Game):
             score: a sum of all pieces over the board from perspective of player
         """
         return evaluate_board(board, player)
-
-        
-
-
-
-
-
-
-
 
 
 
