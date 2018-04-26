@@ -17,15 +17,10 @@ def translate(pos, variant='alamo'):
 
 def algebraic(r,f, variant='alamo'):
     ''' take position in r,f format and return algebraic (a1) format'''
-    try:
-        if variant == 'alamo':
-            ranks = ['1','2','3','4','5','6']
-            files = ['a','b','c','d','e','f']
-            return files[f] + ranks[6-r-1]
-    except:
-        print(r,f)
-        print("Get wrkt")
-        sys.exit()
+    if variant == 'alamo':
+        ranks = ['1','2','3','4','5','6']
+        files = ['a','b','c','d','e','f']
+        return files[f] + ranks[6-r-1]
 
 def encode_square(pos, variant='alamo'):
     '''
@@ -68,17 +63,78 @@ def decode_piece(num, get_color = False):
         elif num < 0:
             return PIECE_DECODER[-1*num].lower()
 
-def encode_move(from_pos, to_pos, promotion=None, variant='alamo'):
+def reverse_square(pos, variant='alamo'):
+    '''
+    Take an algebraic position and mirror it across the origin
+    '''
+    r,f = translate(pos)
+    r_limit, f_limit = BOARD_SIZE[variant]
+    r_new = r_limit - r
+    f_new = f_limit - f
+    return algebraic(r_new, f_new, variant)
+
+
+def encode_move(move, color, variant='alamo'):
+    from_pos = move['from']
+    to_pos = move['to']
+    promotion = move['promotion']
+
+    r_limit, f_limit = BOARD_SIZE[variant]
+
+    if color == -1: # Player is Black
+        from_pos = reverse_square(from_pos)
+        to_pos = reverse_square(to_pos)
+
     if not promotion:
         square1 = encode_square(from_pos, variant)
         square2 = encode_square(to_pos, variant)
-        r_limit, f_limit = BOARD_SIZE['alamo'][0]
         return r_limit*f_limit*square1 + square2
     else:
+        offset = (r_limit*f_limit)**2
+
         r1,f1 = translate(from_pos)
         r2,f2 = translate(to_pos)
 
-def decode_move(num, variant='alamo'):
+        direction = f2-f1+1
+        rank_abbrv = 0 if r1 == 1 else 1
+        
+        promo_integer = [QUEEN, ROOK, KNIGHT, BISHOP].index(promotion)
+
+        num = f_limit*2*(2*f1 + rank_abbrv) + promo_integer*4 + direction + offset
+        return num
+
+def decode_move(num, color, variant='alamo'):
+    r_limit, f_limit = BOARD_SIZE[variant]
+
+    if num < (r_limit*f_limit)**2: # not a promotion
+        square1 = num // (r_limit*f_limit)
+        square2 = num % (r_limit*f_limit)
+        from_pos = decode_square(square1)
+        to_pos = decode_square(square2)
+        promotion = None
+    
+    else: # promotion
+        num = num - (r_limit*f_limit)**2
+
+        first_encoding = num // (f_limit*2)
+        second_encoding = num % (f_limit*2)
+
+        f1 = first_encoding//2
+        rank_abbrv = first_encoding % 2
+        r1 = 
+
+        promo_integer = second_encoding//4
+        direction = second_encoding % 4
+        f2 = f1 + direction - 1
+
+
+
+
+    if color == -1: # Player is Black
+        from_pos = reverse_square(from_pos, variant)
+        to_pos = reverse_square(to_pos, variant)
+
+    move = {'from': from_pos, 'to': to_pos, 'promotion': promotion}
     pass
 
 def enumerate_all_pos(variant='alamo'):
