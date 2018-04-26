@@ -78,7 +78,7 @@ class Coach():
         mutate these objects.
         """
 
-        print("[Worker " + str(i) + "] Started!")
+        print("[Coach Worker " + str(i) + "] Started!")
 
         # Grab work from queue and decode the work data
         while True:
@@ -97,7 +97,6 @@ class Coach():
             episodeStep = 0
 
             while True:
-                print("Worker: {}, Episode Step: {}".format(i, episodeStep))
                 episodeStep += 1
                 canonicalBoard = game.getCanonicalForm(board, curPlayer)
 
