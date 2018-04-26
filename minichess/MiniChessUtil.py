@@ -5,13 +5,13 @@ import sys
 from itertools import permutations
 
 def translate(pos, variant='alamo'):
-
+    ''' Take pos in a1 format and return (rank,file)'''
     if variant == 'alamo':
         chess_file = pos[0]
         chess_rank = pos[1]
         f = ALAMO_FILE_MAPPING[chess_file]
         r = ALAMO_RANK_MAPPING[int(chess_rank)]
-        return (f,r)
+        return (r,f)
 
 def map_piece(piece, player):
     ''' piece is p,b,k,n,q
@@ -20,6 +20,7 @@ def map_piece(piece, player):
     return player * PIECE_MAPPING[piece]
 
 def decode_piece(num):
+    '''take a number +/-1,2,3,5,9,100 and return the piece associated'''
     if num == 0:
         return '.'
     elif num > 0:
@@ -38,7 +39,6 @@ def enumerate_all_pos(variant='alamo'):
         for i in range(len(files)):
             for j in range(len(ranks)):
                 positions.append(files[i]+ranks[j])
-
 
     return positions
 

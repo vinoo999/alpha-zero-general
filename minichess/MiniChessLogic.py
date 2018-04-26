@@ -54,12 +54,14 @@ class Board():
         num_files = self.board.shape[1]
 
         for pos in positions:
-            f, r = translate(pos, self.variant)
+            r, f = translate(pos, self.variant)
+            piece = self.board[r,f]
 
 
     def get_score(self):
         for i in range(self.board.shape[0]):
             for j in range(self.board.shape[1]):
+
                 return
 
 
