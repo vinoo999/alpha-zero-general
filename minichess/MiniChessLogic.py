@@ -43,12 +43,6 @@ class Board():
             self.board[i,j] = num_color*num_piece
         return
 
-    def get_score(self):
-        for i in range(self.board.shape[0]):
-            for j in range(self.board.shape[1]):
-                
-
-
 
 
 
