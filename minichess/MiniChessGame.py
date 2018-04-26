@@ -44,23 +44,36 @@ class MiniChessGame(Game):
             + 6*2*3*4:12    spaces to promote into
                             each has 3 spaces from-- forward, left, right)
                             and 4 promotion piece types
-
-            + 1:            do nothing
         """
-        return 6**4 + 6*2*3*4 + 1
+        return 6**4 + 6*2*3*4
 
     def getNextState(self, board, player, action):
         """
         Input:
             board: current board
             player: current player (1 or -1)
-            action: action taken by current player
+            action: integer action taken by current player
 
         Returns:
             nextBoard: board after applying action
             nextPlayer: player who plays in the next turn (should be -player)
         """
-        pass
+
+        #Build dictionary holding algebraic expressions {from:pos1, to:pos2, promo: optional)
+        move = decode_move(action)
+
+        #Perform the move on the game board
+        game.do_move(move)
+
+        #Grab the new mcts board
+        next_board = game.get_board_mcts()
+
+        #Remove state info for hashing the state
+        self.state_counts[self.stringRepresentation(next_board)] += 1
+
+        #TODO: not returning a deep copied board, handle this
+        return (next_board, -player)
+
 
     def getValidMoves(self, board, player):
         """
@@ -73,7 +86,21 @@ class MiniChessGame(Game):
                         moves that are valid from the current board and player,
                         0 for invalid moves
         """
-        pass
+
+        valids = [0]*self.getActionSize()
+
+        b = Board(mcts_board=board)
+
+        legal_moves = b.get_legal_moves(player)
+
+        for move in legalMoves:
+
+            #Pass move dict into encode_move to return the valid move's index
+            move_index = encode_move[move]
+            valids[move_index] = 1
+
+        return np.array(valids)
+
 
     def getGameEnded(self, board, player):
         """
@@ -110,8 +137,6 @@ class MiniChessGame(Game):
 
 
 
-
-
     def getCanonicalForm(self, board, player):
         """
         Input:
@@ -141,19 +166,15 @@ class MiniChessGame(Game):
             canonicalBoard = np.fliplr(canonicalBoard)
 
             #Attach the last row of game info back
-            canonicalBoard = np.vstack([canonicalBoard, board[6,:]])
+            canonicalBoard = np.vstack([canonicalBoard, board_copy[6,:]])
 
-
-            #NO NEED TO DEEP COPY??????
-
-            #Swap king positions
-            #canonicalBoard[6,0] = #encode_square: Takes algebraic expression to number
-            #canonicalBoard[6,1] = #encode_square
+            #Swap king positions in the last row
+            orig_white_king_pos = canonicalBoard[6,0] 
+            canonicalBoard[6,0] = canonicalBoard[6,1]
+            canonicalBoard[6,1] = orig_white_king_pos
 
             #Update current player
-            #canonicalBoard[6,2] = player
-
-
+            canonicalBoard[6,2] = player
 
             return canonicalBoard
 
@@ -168,7 +189,8 @@ class MiniChessGame(Game):
                        form of the board and the corresponding pi vector. This
                        is used when training the neural network from examples.
         """
-        pass
+        return [(board,pi)]
+
 
     def stringRepresentation(self, board):
         """
