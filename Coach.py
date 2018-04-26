@@ -11,6 +11,7 @@ from chess.ChessUtil import decode_move
 from chess.ChessGame import display
 import multiprocessing as mp
 import copy
+import random
 from utils import *
 
 
@@ -96,6 +97,7 @@ class Coach():
             episodeStep = 0
 
             while True:
+                print("Worker: {}, Episode Step: {}".format(i, episodeStep))
                 episodeStep += 1
                 canonicalBoard = game.getCanonicalForm(board, curPlayer)
 
@@ -165,7 +167,17 @@ class Coach():
                 # Wait for results to come in
                 for ep in range(self.args.numEps):
                     runtime, examples = done_queue.get()
-                    iterationTrainExamples += examples
+                    
+                    to_add = False
+                    loss_rate = 0.9
+                    if abs(examples[0][2]) != 1:
+                        if random.randint(1,int(loss_rate*100)) > loss_rate*100:
+                            to_add = True
+                    else:
+                        to_add = True
+
+                    if to_add:
+                        iterationTrainExamples += examples
 
                     tracker.update(runtime)
                     bar.suffix = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(
