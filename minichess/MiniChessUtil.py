@@ -15,6 +15,9 @@ def translate(pos, variant='alamo'):
         r = ALAMO_RANK_MAPPING[int(chess_rank)]
         return (r,f)
 
+def swap_color(c):
+    return BLACK if c==WHITE else WHITE
+
 def algebraic(r,f, variant='alamo'):
     """
     Input:
