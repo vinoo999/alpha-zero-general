@@ -51,6 +51,7 @@ class Board():
         Output: 
             set all parameters of the board
         """
+        # print(mcts_board.shape)
         mcts_board = copy.deepcopy(mcts_board)
         self.board = mcts_board[0:6, :]
 
@@ -239,7 +240,7 @@ class Board():
         self.board[from_r, from_f] = 0
         self.turn = -self.turn
         self.total_moves += 1
-
+        
         if piece == PAWN or captured:
             self.half_moves = 0
         else:

@@ -7,14 +7,16 @@ from utils import *
 
 args = dotdict({
     'numIters': 1000,
-    'numEps': 100,
-    'tempThreshold': 15,
+    'numEps': 50,
+    'tempThreshold': 100,
     'updateThreshold': 0.6,
     'maxlenOfQueue': 200000,
-    'numMCTSSims': 50,
-    'arenaCompare': 40,
+    'numMCTSSims': 40,
+    'arenaCompare': 20,
     'cpuct': 1,
 
+    'filter_draw_rate': 0.8,
+    
     'checkpoint': './temp/',
     'load_model': False,
     'load_folder_file': ('/dev/models/8x100x50','best.pth.tar'),

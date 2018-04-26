@@ -1,8 +1,8 @@
-from chess.ChessGame import display
-from chess.ChessLogic import Board
-from chess.ChessUtil import *
-from chess.ChessConstants import *
-from chess.keras.NNet import NNetWrapper as NNet
+from minichess.MiniChessGame import display
+from minichess.MiniChessLogic import Board
+from minichess.MiniChessUtil import *
+from minichess.MiniChessConstants import *
+from minichess.keras.NNet import NNetWrapper as NNet
 from MCTS import MCTS
 from utils import *
 
@@ -58,7 +58,7 @@ class HumanChessPlayer():
         valid = self.game.getValidMoves(board, 1)
 
         while True:
-
+            display(board)
             a = input("Enter move in the following format: from to [promotion]\n")
 
             splits = a.split(' ')
@@ -91,15 +91,16 @@ class HumanChessPlayer():
 
             #Generate the move dictionary to pass to encode_move
             move = {'from':moveFrom, 'to':moveTo, 'promotion':promotion}
-
-            move_index = encode_move(move)
-
+            print(move)
+            print(board[6,2])
+            move_index = encode_move(move, board[6,2])
+            print(move_index)
             if valid[move_index]:
             	break
             else:
             	print("Invalid move. Enter again.")
 
-           return move_index
+            return move_index
 
 
 

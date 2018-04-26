@@ -7,6 +7,7 @@ import time, os, sys
 from pickle import Pickler, Unpickler
 from random import shuffle
 from minichess.MiniChessGame import display
+import random
 
 
 class Coach():
@@ -47,7 +48,10 @@ class Coach():
             canonicalBoard = self.game.getCanonicalForm(board,self.curPlayer)
             temp = int(episodeStep < self.args.tempThreshold)
 
-            # display(canonicalBoard)
+            print("Episdoe: {}, State Count: {}".format(episodeStep, self.game.state_counts[self.game.stringRepresentation(board)]))
+            display(board)
+            print(canonicalBoard)
+            print(board)
             pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
             sym = self.game.getSymmetries(canonicalBoard, pi)
             for b,p in sym:
@@ -87,7 +91,19 @@ class Coach():
     
                 for eps in range(self.args.numEps):
                     self.mcts = MCTS(self.game, self.nnet, self.args)   # reset search tree
-                    iterationTrainExamples += self.executeEpisode()
+                    
+                    examples = self.executeEpisode()
+                    # Drop 80% of draws
+                    to_add = False
+                    loss_rate = self.args.filter_draw_rate
+                    if abs(examples[0][2]) != 1:
+                        if random.random() >= loss_rate:
+                            to_add = True
+                    else:
+                        to_add = True
+
+                    if to_add:
+                        iterationTrainExamples += examples
     
                     # bookkeeping + plot progress
                     eps_time.update(time.time() - end)
@@ -96,6 +112,7 @@ class Coach():
                                                                                                                total=bar.elapsed_td, eta=bar.eta_td)
                     bar.next()
                 bar.finish()
+
 
                 # save the iteration examples to the history 
                 self.trainExamplesHistory.append(iterationTrainExamples)

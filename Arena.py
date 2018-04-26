@@ -1,6 +1,7 @@
 import numpy as np
 from pytorch_classification.utils import Bar, AverageMeter
 import time
+from minichess.MiniChessUtil import *
 
 class Arena():
     """
@@ -44,7 +45,8 @@ class Arena():
             action = players[curPlayer+1](self.game.getCanonicalForm(board, curPlayer))
 
             valids = self.game.getValidMoves(self.game.getCanonicalForm(board, curPlayer),1)
-
+            print(action, curPlayer)
+            print(decode_move(action, curPlayer))
             if valids[action]==0:
                 print(action)
                 assert valids[action] >0

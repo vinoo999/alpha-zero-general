@@ -36,6 +36,7 @@ class MCTS():
             #Deep copy so that search doesnt modify game state counts
             tmp_game = copy.deepcopy(self.game)
             # print("Search from getactionprob")
+            # display(canonicalBoard)
             self.search(canonicalBoard)
             self.game = tmp_game
 

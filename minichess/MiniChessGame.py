@@ -71,6 +71,7 @@ class MiniChessGame(Game):
 
         #Remove state info for hashing the state
         self.state_counts[self.stringRepresentation(next_board)] += 1
+        next_board[6,5] = self.state_counts[self.stringRepresentation(next_board)]
 
         #TODO: not returning a deep copied board, handle this
         return (next_board, -player)
@@ -121,10 +122,15 @@ class MiniChessGame(Game):
         b = Board(mcts_board=board)
 
         #Grab board rep without halfmoves and statecount for indexing dict
-        board_string = self.stringRepresentation(board)
+        # board_string = self.stringRepresentation(board)
+        if b.state_count > 1:
+            print("STATE COUNT")
+            print(b.state_count)
+            display(board)
+            print("***")
 
         #Check if a draw occured
-        if b.in_stalemate(player) or b.insufficient_material(player) or b.half_moves >= 50 or self.state_counts[board_string] >= 3:
+        if b.in_stalemate(player) or b.insufficient_material(player) or b.half_moves >= 50 or b.state_count >= 3:
             return 1e-2
 
         #Check if current player is in checkmate (loss)
