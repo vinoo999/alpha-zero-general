@@ -169,9 +169,9 @@ class Coach():
                     
                     # Drop 80% of draws
                     to_add = False
-                    loss_rate = 0.8
+                    loss_rate = self.args.filter_draw_rate
                     if abs(examples[0][2]) != 1:
-                        if random.randint(1, int(loss_rate * 100)) > loss_rate * 100:
+                        if random.random() >= loss_rate:
                             to_add = True
                     else:
                         to_add = True
@@ -181,8 +181,8 @@ class Coach():
 
                     tracker.update(runtime)
                     bar.suffix = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(
-                                  eps=ep, maxeps=self.args.numEps, et=tracker.avg(), total=bar.elapsed_td, 
-                                  eta=tracker.eta(i, self.args.numEps))
+                                  eps=ep + 1, maxeps=self.args.numEps, et=tracker.avg(), total=bar.elapsed_td, 
+                                  eta=tracker.eta(ep + 1, self.args.numEps))
                     bar.next()
 
                 print("[Master] Killing workers...")
@@ -192,6 +192,7 @@ class Coach():
                     p.terminate()
                     p.join()
 
+                print("[Master] iter={} adding {} examples".format(i, len(iterationTrainExamples)))
                 self.trainExamplesHistory.append(iterationTrainExamples)
 
                 bar.finish()
@@ -202,7 +203,7 @@ class Coach():
                 self.trainExamplesHistory.pop(0)
             # backup history to a file
             # NB! the examples were collected using the model from the previous iteration, so (i-1)  
-            self.saveTrainExamples(i - 1)
+            self.saveTrainExamples(i)
             
             # shuffle examlpes before training
             trainExamples = []
@@ -236,6 +237,9 @@ class Coach():
                 self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
                 self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
 
+                # Load so all nnets are updated accordingly
+                self.nnet.load_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
+
 
     def getCheckpointFile(self, iteration):
         return 'checkpoint_' + str(iteration) + '.pth.tar'
@@ -244,7 +248,9 @@ class Coach():
         folder = self.args.checkpoint
         if not os.path.exists(folder):
             os.makedirs(folder)
+
         filename = os.path.join(folder, self.getCheckpointFile(iteration)+".examples")
+        print("Saving examples: " + filename)
         with open(filename, "wb+") as f:
             Pickler(f).dump(self.trainExamplesHistory)
         f.closed

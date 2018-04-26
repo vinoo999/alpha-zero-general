@@ -10,16 +10,17 @@ from utils import *
 import multiprocessing as mp
 
 args = dotdict({
-    'numIters': 5,            # Total number of iterations of self-play, training, and evaluation
+    'numIters': 50,             # Total number of iterations of self-play, training, and evaluation
     'numEps': 100,              # Number of self-play examples generated per iteration
-    'tempThreshold': 10,       # Number of stochastic MCTS simulations per training game
+    'tempThreshold': 100,       # Number of stochastic MCTS simulations per training game
     'updateThreshold': 0.6,     # Percent minimum number of wins during evaluation to accept new model
     'maxlenOfQueue': 200000,    # Max number of examples in training data
-    'numMCTSSims': 5,         # Number of MCTS simulations per move
-    'arenaCompare': 3,         # Number of games in evaluation step
+    'numMCTSSims': 100,         # Number of MCTS simulations per move
+    'arenaCompare': 25,         # Number of games in evaluation step
     'cpuct': 1,                 # MCTS exploration vs exploitation parameter
+    'filter_draw_rate': 0,
 
-    'mcts_workers': 2,
+    'mcts_workers': 8,
     'nnet_workers': 2,
 
     'checkpoint': './temp/',

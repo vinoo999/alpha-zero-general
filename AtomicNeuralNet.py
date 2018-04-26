@@ -33,7 +33,7 @@ def NNetWorker(game, nsync, i):
 
     while True:
         data_id, data = work_queue.get()
-        print("[NNet Worker " + str(i) + "] Got Work!")
+        #print("[NNet Worker " + str(i) + "] Got Work!")
 
         if data["inst"] == "predict":
             res = nnet.predict(data["board"])
@@ -53,7 +53,7 @@ def NNetWorker(game, nsync, i):
             nnet.train(data["examples"])
             res = "OK"
 
-        print("[NNet Worker " + str(i) + "] Done!")
+        #print("[NNet Worker " + str(i) + "] Done!")
         done_queue.put((data_id, res))
 
 
@@ -152,7 +152,7 @@ class NNetManager():
         data["board"] = board
 
         q_idx, data_id = self.put(data)
-        self.get(q_idx, data_id)        # Blocks here
+        res = self.get(q_idx, data_id)  # Blocks here
 
         return res
 

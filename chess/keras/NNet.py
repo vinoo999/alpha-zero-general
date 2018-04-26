@@ -52,7 +52,6 @@ class NNetWrapper(NeuralNet):
 
         # run
         with self.nnet.graph.as_default():
-            print("Predict...")
             pi, v = self.nnet.model.predict(board)
 
             #print('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
