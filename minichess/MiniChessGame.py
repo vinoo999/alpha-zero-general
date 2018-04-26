@@ -12,7 +12,8 @@ from collections import defaultdict
 class MiniChessGame(Game):
 
     def __init__(self):
-        pass
+        self.n = 6
+        self.state_counts = defaultdict(int)
 
     def getInitBoard(self):
         """
@@ -20,24 +21,33 @@ class MiniChessGame(Game):
             startBoard: a representation of the board (ideally this is the form
                         that will be the input to your neural network)
         """
-
+        game = Board()
+        self.state_counts = defaultdict(int)
+        return np.array(game.get_board_mcts())
         
 
-        pass
 
     def getBoardSize(self):
         """
         Returns:
             (x,y): a tuple of board dimensions
         """
-        pass
+        return (self.n+1, self.n)
 
     def getActionSize(self):
         """
         Returns:
             actionSize: number of all possible actions
+
+            + 6^4:          from -> to (6x6: from, 6x6: to)
+
+            + 6*2*3*4:12    spaces to promote into
+                            each has 3 spaces from-- forward, left, right)
+                            and 4 promotion piece types
+                            
+            + 1:            do nothing
         """
-        pass
+        return 6**4 + 6*2*3*4 + 1
 
     def getNextState(self, board, player, action):
         """
@@ -130,6 +140,8 @@ class MiniChessGame(Game):
             score: a sum of all pieces over the board from perspective of player
         """
         return evaluate_board(board, player)
+
+        
 
 
 
