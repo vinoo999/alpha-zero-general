@@ -29,8 +29,36 @@
 </div>
 <div class="center-wrapper" id="loading-wrapper">
     <div class="modal">
-        <h2 id="loading-text">Loading...</h2>
+        <h2 id="loading-text"></h2>
         <div class="loader"></div>
+    </div>
+</div>
+<div class="center-wrapper" id="game-mode-wrapper">
+    <div class="modal">
+        <h2 id="game-mode-text">Select players:</h2>
+        <div class="player-selectors">
+            <span>Player 1 (White):</span>
+            <select id="player-1">
+                <option value="invalid"> -- </option>
+                <option value="human">Human</option>
+                <option value="nnet-new">AlphaZero New</option>
+                <option value="nnet-old">AlphaZero Old</option>
+                <option value="alpha-beta">Alpha-Beta</option>
+                <option value="random">Random</option>
+            </select>
+        </div>
+        <div class="player-selectors">
+            <span>Player 2 (Black):</span>
+            <select id="player-2">
+                <option value="invalid"> -- </option>
+                <option value="human">Human</option>
+                <option value="nnet-new">AlphaZero New</option>
+                <option value="nnet-old">AlphaZero Old</option>
+                <option value="alpha-beta">Alpha-Beta</option>
+                <option value="random">Random</option>
+            </select>
+        </div>
+        <button id="btn-player-submit" type="button" onclick="selectPlayers()">Start</button>
     </div>
 </div>
 <script src="lib/jquery/jquery-3.2.1.min.js"></script>

@@ -16,25 +16,51 @@ use this script to play any two agents against each other, or play manually with
 any agent.
 """
 
-ncp = "saves"                                        # Checkpoint path
-ncf = "model.pth.tar"                                # Checkpoint file
-nca = { 'numMCTSSims': 25, 'cpuct': 1.0, 'temp': 0 } # NNet args
+ncp_new = "saves/save-bc5a3cffa65"                        # Checkpoint path
+ncf_new = "best.pth.tar"                                  # Checkpoint file
+nca_new = { 'numMCTSSims': 100, 'cpuct': 1.0, 'temp': 0 } # NNet args
+
+ncp_old = "saves/save-bc5a3cffa65"                        # Checkpoint path
+ncf_old = "best.pth.tar"                                  # Checkpoint file
+nca_old = { 'numMCTSSims': 25, 'cpuct': 1.0, 'temp': 0 }  # NNet args
 
 class GameWrapper():
-    def __init__(self, sess_id):
-        self.g  = ChessGame()                              # Initialize chess game
-        self.g.webserver = True     
-
-#       self.r  = NNetNetworkPlayer(self.g, ncp, ncf, nca) # Initialize computer player
-        self.r  = RandomNetworkPlayer(self.g)
-        self.rp = self.r.play
-        self.h  = HumanNetworkChessPlayer(self.g)          # Initialize human player
-        self.hp = self.h.play
+    def __init__(self, sess_id, p1, p2, gm):
+        self.g = ChessGame()
+        self.result_queue = Queue()
 
         self.sess_id = sess_id
+        self.gm = gm
 
-    def arena_hook(self):
-        arena = Arena.Arena(self.hp, self.rp, self.g, display=display)
+        if p1 == "human":
+            print("Initializing human...")
+            self.player1 = HumanNetworkChessPlayer(self.g, self.result_queue)
+        elif p1 == "nnet-new":
+            self.player1 = NNetNetworkPlayer(self.g, ncp_new, ncf_new, nca_new)
+        elif p1 == "nnet-old":
+            self.player1 = NNetNetworkPlayer(self.g, ncp_old, ncf_old, nca_old)
+        elif p1 == "alpha-beta":
+            self.player1 = AlphaBetaNetworkPlayer(self.g)
+        else:
+            self.player1 = RandomNetworkPlayer(self.g)
+
+        if p2 == "human":
+            self.player2 = HumanNetworkChessPlayer(self.g, self.result_queue)
+        elif p2 == "nnet-new":
+            self.player2 = NNetNetworkPlayer(self.g, ncp_new, ncf_new, nca_new)
+        elif p2 == "nnet-old":
+            self.player2 = NNetNetworkPlayer(self.g, ncp_old, ncf_old, nca_old)
+        elif p2 == "alpha-beta":
+            self.player2 = AlphaBetaNetworkPlayer(self.g)
+        else:
+            print("Initializing random...")
+            self.player2 = RandomNetworkPlayer(self.g)
+
+        self.p1p = self.player1.play
+        self.p2p = self.player2.play
+
+    def arena_hook(self, result_queue):
+        arena = Arena.Arena(self.p1p, self.p2p, self.g, display=display, result_queue=result_queue)
         arena.playGames(2, verbose=True)
 
 
@@ -54,9 +80,13 @@ def new_game():
     # Generate a random session id
     sess_id = "".join(random.choice(string.ascii_letters + string.digits) for _ in range(16))
 
+    player1 = request.args.get("player1")
+    player2 = request.args.get("player2")
+    game_mode = request.args.get("game_mode")
+
     # Initialize a new game
-    new_game = GameWrapper(sess_id)
-    arena = Thread(target=new_game.arena_hook)
+    new_game = GameWrapper(sess_id, player1, player2, game_mode)
+    arena = Thread(target=new_game.arena_hook, args=(new_game.result_queue,))
     arena.daemon = True
     arena.start()
 
@@ -68,15 +98,30 @@ def new_game():
 @app.route("/get_move", methods=["GET"])
 def get_move():
     sess_id = request.args.get("sess_id")
-    move = games[sess_id].r.queue.get()
-    move["result"] = games[sess_id].g.result.get()
+    turn_color = request.args.get("turn")
+
+    if turn_color == "w":
+        move = games[sess_id].player1.queue.get()
+    else:
+        move = games[sess_id].player2.queue.get()
+
+    move["result"] = games[sess_id].result_queue.get()
+
     return json.dumps(move)
 
 @app.route("/make_move", methods=["POST"])
 def make_move():
     sess_id = request.form.get("sess_id")
-    games[sess_id].h.queue.put(request.form.get("move"))
-    return json.dumps({ "result": games[sess_id].g.result.get() })
+    turn_color = request.form.get("turn")
+    move = request.form.get("move")
+
+    if turn_color == "w":
+        games[sess_id].player1.queue.put(move)
+    else:
+        games[sess_id].player2.queue.put(move)
+
+    res = games[sess_id].result_queue.get()
+    return json.dumps({ "result": res })
 
 @app.route("/<path:path>", methods=["GET"])
 def serve_static(path):
@@ -86,25 +131,15 @@ def web_server_hook():
     app.run(host='0.0.0.0')
 
 
+args = dotdict({
+    'nnet_workers': 2
+})
+
 def main():
+    # Start webserver
     web_server = Thread(target=web_server_hook)
     web_server.daemon = True
     web_server.start()
-
-
-    # nnet players
-    # n1 = NNet(g)
-    # n1.load_checkpoint('./pretrained_models/chess/keras/','6x6 checkpoint_145.pth.tar')
-    # args1 = dotdict({'numMCTSSims': 50, 'cpuct':1.0})
-    # mcts1 = MCTS(g, n1, args1)
-    # n1p = lambda x: np.argmax(mcts1.getActionProb(x, temp=0))
-
-
-    #n2 = NNet(g)
-    #n2.load_checkpoint('/dev/8x50x25/','best.pth.tar')
-    #args2 = dotdict({'numMCTSSims': 25, 'cpuct':1.0})
-    #mcts2 = MCTS(g, n2, args2)
-    #n2p = lambda x: np.argmax(mcts2.getActionProb(x, temp=0))
 
     web_server.join()
 

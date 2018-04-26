@@ -11,14 +11,14 @@ from collections import defaultdict
 from queue import Queue
 
 class ChessGame(Game):
-    def __init__(self):
+    def __init__(self, webserver=False):
         self.n = 8
         self.state_counts = defaultdict(int)
-        self.webserver = False
+        self.webserver = webserver
 
         # TODO: Workaround for Queue pickling error. Maybe try mp.Queue?
-        if self.webserver:
-            self.result = Queue(maxsize=1)
+        # if self.webserver:
+        #     self.result = Queue(maxsize=1)
 
     def getInitBoard(self):
         # return initial board (numpy board)
@@ -137,40 +137,20 @@ class ChessGame(Game):
     def getGameEnded(self, board, player):
         b = Board(mcts_board=board)
 
-        no_move_board = copy.deepcopy(board)
+        no_move_board = copy.deepcopy(board) # TODO: Or you could just get b.board since it was just copied
         no_move_board[8,6] = 0
         no_move_board[8,7] = 0
         str_rep_no_move = self.stringRepresentation(no_move_board)
         
-        #print('**********************************************************************')
-        #display(board)
-        #print(board)
-        #print("Num count: {}".format(self.state_counts[str_rep_no_move]))
-        #print('**********************************************************************')
-        
-        # print("player in: " + str(player))
-        # print("player: " +str(no_move_board[8,2]))
-
-
-        # print("Num count: ", self.state_counts[str_rep_no_move])
-        if b.in_checkmate():
-            current_player = no_move_board[8,2]
-            #print("player in checkmate: "+str(current_player))
-            return -1#current_player#-1 #if current_player == player else 1#-1
+        if b.turn == WHITE and b.in_checkmate():
+            return -1 * player
 
         if b.in_stalemate() or b.insufficient_material() or b.half_moves >= 50 or self.state_counts[str_rep_no_move] >= 3:
-            #print("Stalemate: ", b.in_stalemate())
-            #print("insufficient_material: " , b.insufficient_material())
-            #print("Half Moves: ", b.half_moves)
-            #print("3=fold rep: ", self.state_counts[str_rep_no_move])
-            #print("----------------------GAME TIE-------------------------")
             return 1e-2
 
-        b.turn = swap_color(b.turn)
-        if b.in_checkmate():
-            #print("player who checkmated: "+str(player))
-
-            return 1
+        #b.turn = swap_color(b.turn)
+        if b.turn == BLACK and b.in_checkmate():
+            return 1 * player
         
         return 0
 

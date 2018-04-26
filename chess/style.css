@@ -9,6 +9,7 @@
 	height: 100%;
 	position: absolute;
 	z-index: 1000;
+	display: none;
 }
 
 .board {
@@ -19,6 +20,7 @@
 .info {
     width: 400px;
     margin: auto;
+    display: none;
 }
 
 .move-history {
@@ -66,4 +68,16 @@
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+.player-selectors {
+	margin: 30px auto;
+	text-align: center;
+}
+
+#btn-player-submit {
+	margin: 15px auto;
+	width: 100px;
+	height: 21px;
+	display: block;
 }

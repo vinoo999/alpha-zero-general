@@ -190,9 +190,10 @@ class HumanChessPlayer():
 
 
 class HumanNetworkChessPlayer():
-    def __init__(self, game):
+    def __init__(self, game, result_queue):
         self.game = game
         self.queue = Queue(maxsize=1)
+        self.result_queue = result_queue
 
     def play(self, board):
 
@@ -212,13 +213,13 @@ class HumanNetworkChessPlayer():
             #Ensure the piece locations are properly formatted (i.e "a1")
             if len(moveFrom) != 2 or len(moveTo) != 2:
                 print("Improper position format. Enter again.")
-                if self.game.webserver: self.game.result.put(None)
+                self.result_queue.put(None)
                 continue
 
             #Ensure the promotion piece is valid
             if len(a_split) == 3 and a_split[2] not in ['n', 'b', 'r', 'q']:
                 print("Improper promotion format. Enter again.")
-                if self.game.webserver: self.game.result.put(None)
+                self.result_queue.put(None)
                 continue
 
             #Go from a human-readable action (a9->a8) to an action encoding
@@ -251,7 +252,7 @@ class HumanNetworkChessPlayer():
                 break
             else:
                 print('Invalid')
-                if self.game.webserver: self.game.result.put(None)
+                self.result_queue.put(None)
                 continue
 
         return num

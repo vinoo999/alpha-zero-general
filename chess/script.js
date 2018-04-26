@@ -1,38 +1,96 @@
 var board, game = new Chess();
-var sess_id;
+var sess_id, player1, player2, game_mode;
 
 /* Shorthand for onready; create a new game session */
 $( function() {
+    $("#game-mode-wrapper").show()
+});
+
+var selectPlayers = function () {
+    player1 = $("#player-1").val()
+    player2 = $("#player-2").val()
+
+    if (player1 == "invalid" || player2 == "invalid") {
+        alert("Invalid player selection!")
+        return;
+    }
+
+    $("#condom").show();
+    $("#game-mode-wrapper").hide()
+
     // Render loading modal
     $("#loading-text").text("Initializing new game...");
     $("#loading-wrapper").show();
 
+    /** 
+     * Initialize game based on player1 and player2. If player1 is human and player2 
+     * is human, assign onDrop() and wait, if 
+    **/
+
+    if (player1 == "human" && player2 == "human") {
+        game_mode = "HH"
+    } else if (player1 == "human" && player2 != "human") {
+        game_mode = "HR"
+    } else if (player1 != "human" && player2 == "human") {
+        game_mode = "RH"
+    } else {
+        game_mode == "RR"
+    }
+
+    var cfg = {
+        draggable: true,
+        position: 'start',
+        onDragStart: onDragStart,
+        onDrop: null,
+        onMouseoutSquare: onMouseoutSquare,
+        onMouseoverSquare: onMouseoverSquare,
+        onSnapEnd: onSnapEnd
+    };
+
+    if (game_mode == "HH") {
+        cfg.onDrop = onDrop;
+    } 
+    else if (game_mode == "HR") {
+        cfg.onDrop = onDrop;
+    }
+    else if (game_mode == "RH") {
+        makeBestMove();
+        cfg.onDrop = onDrop;
+    }
+    else {
+        makeBestMove();
+    }
+
+    board = ChessBoard('board', cfg);
+    $(".info").show()
+
     var url = location.protocol + "//" + location.hostname + ":" + location.port + "/new_game";
-    $.get(url, (id) => {
+    var data = { "player1": player1, "player2": player2, "game_mode": game_mode }
+    var success = (id) => {
         $("#condom").hide();
         $("#loading-wrapper").hide();
         $("#loading-text").text("Thinking...");
 
-        /* Request handler */
-        sess_id = id
+        // Set our session id
+        sess_id = id;
+    };
+
+    $.ajax({
+        type: "GET",
+        url: url,
+        data: data,
+        success: success
     });
-});
+}
 
 /* board visualization and games state handling */
-
-var onDragStart = function (source, piece, position, orientation) {
-    if (game.in_checkmate() === true || game.in_draw() === true ||
-        piece.search(/^b/) !== -1) {
-        return false;
-    }
-};
 
 var gameOver = function (result) {
     message = "";
     if (result == 1) {
-        message = "You win!";
+        message = "Player 1 wins!";
     } else if (result == -1) {
-        message = "You lose!";
+        message = "Player 2 wins!";
     } else {
         message = "Draw!"
     }
@@ -47,7 +105,7 @@ var makeBestMove = function () {
 
     // Build GET request
     var url = location.protocol + "//" + location.hostname + ":" + location.port + "/get_move";
-    var data = { "sess_id": sess_id };
+    var data = { "sess_id": sess_id, "turn": game.turn() };
     var success = (move) => {
         move = JSON.parse(move);
         if (move.result != null) {
@@ -62,6 +120,10 @@ var makeBestMove = function () {
         game.ugly_move(move);
         board.position(game.fen());
         renderMoveHistory(game.history());
+
+        if (game_mode == "RR") {
+            return window.setTimeout(makeBestMove, 250);
+        }
     };
 
     // Render loading modal
@@ -104,7 +166,10 @@ var sendMove = function (move, data) {
         }
 
         renderMoveHistory(game.history());
-        window.setTimeout(makeBestMove, 250);
+
+        if (game_mode != "HH") {
+            window.setTimeout(makeBestMove, 250);
+        }
     }
 
     // Send request to flask server 
@@ -119,9 +184,9 @@ var sendMove = function (move, data) {
 var onDrop = function (source, target, piece) {
 
     /* On player move, send move to server */
-    var data = { "sess_id": sess_id };
+    var data = { "sess_id": sess_id, "turn": game.turn()};
 
-    if (target.charAt(1) == "8" && piece.charAt(1) == "P") {
+    if (piece.charAt(1) == "P" && (target.charAt(1) == "8" || target.charAt(1) == "1")) {
         /* Handle a promotion */
 
         // Show promotion modal
@@ -167,6 +232,25 @@ var onDrop = function (source, target, piece) {
     }
 };
 
+var human_move = function () {
+    if (game_mode == "HH") {
+        return true;
+    } else if (game_mode == "HR" && game.turn() == "w") {
+        return true;
+    } else if (game_mode == "RH" && game.turn() == "b") {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+var onDragStart = function (source, piece, position, orientation) {
+    if (game.in_checkmate() === true || game.in_draw() === true || 
+        human_move() === false) {
+        return false;
+    }
+};
+
 var onSnapEnd = function () {
     board.position(game.fen());
 };
@@ -177,7 +261,15 @@ var onMouseoverSquare = function(square, piece) {
         verbose: true
     });
 
-    if (moves.length === 0) return;
+    if (moves.length === 0) {
+        // game.flip_turn();
+        // moves = game.moves({
+        //     square: square,
+        //     verbose: true
+        // });
+        // game.flip_turn();
+        return;
+    };
 
     greySquare(square);
 
@@ -205,13 +297,14 @@ var greySquare = function(square) {
     squareEl.css('background', background);
 };
 
-var cfg = {
-    draggable: true,
-    position: 'start',
-    onDragStart: onDragStart,
-    onDrop: onDrop,
-    onMouseoutSquare: onMouseoutSquare,
-    onMouseoverSquare: onMouseoverSquare,
-    onSnapEnd: onSnapEnd
-};
-board = ChessBoard('board', cfg);
+// var cfg = {
+//     draggable: true,
+//     position: 'start',
+//     onDragStart: onDragStart,
+//     onDrop: onDrop,
+//     onMouseoutSquare: onMouseoutSquare,
+//     onMouseoverSquare: onMouseoverSquare,
+//     onSnapEnd: onSnapEnd
+// };
+
+// board = ChessBoard('board', cfg);

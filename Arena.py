@@ -8,7 +8,7 @@ class Arena():
     """
     An Arena class where any 2 agents can be pit against each other.
     """
-    def __init__(self, player1, player2, game, display=None, num_workers=1):
+    def __init__(self, player1, player2, game, display=None, num_workers=1, result_queue=None):
         """
         Input:
             player 1,2: two functions that takes board as input, return action
@@ -25,6 +25,8 @@ class Arena():
         self.game = game
         self.display = display
         self.num_workers = num_workers
+        self.result_queue = result_queue
+
 
     # DEPRICATED -- use arena_worker instead
     def playGame(self, verbose=False):
@@ -57,11 +59,19 @@ class Arena():
                 print(np.where(valids>0))
                 assert valids[action] >0
             board, curPlayer = self.game.getNextState(board, curPlayer, action)
+            if self.result_queue is not None: 
+                res = self.game.getGameEnded(board, 1)
+                self.result_queue.put(None if res == 0 else res)
+
+        res = self.game.getGameEnded(board, 1)
+
         if verbose:
             assert(self.display)
-            print("Game over: Turn ", str(it), "Result ", str(self.game.getGameEnded(board, 1)))
+            print("Game over: Turn ", str(it), "Result ", str(res))
+            if self.result_queue is not None: self.result_queue.put(res)
             self.display(board)
-        return self.game.getGameEnded(board, 1)
+
+        return res
 
 
     def arena_worker(self, work_queue, done_queue, i, player1, player2):
@@ -104,12 +114,12 @@ class Arena():
 
             if verbose:
                 print("Game over: Turn ", str(it), "Result ", str(res))
-                if self.game.webserver: self.game.result.put(res * curPlayer)
+                if self.game.webserver: self.game.result.put(res)
                 self.display(board)
 
             # Return the result of the game from the HUMAN (player 1) perspective
             # NOTE: This is not the same thing as game.getGameEnded(board, curPlayer)
-            done_queue.put((time.time() - start, res * curPlayer))
+            done_queue.put((time.time() - start, res))
 
 
     def playGames(self, num, verbose=False):
@@ -174,7 +184,7 @@ class Arena():
         for i in range(first_half):
             start = time.time()
             
-            gameResult = self.playGame()
+            gameResult = self.playGame(verbose=verbose)
 
             if gameResult == 1:
                 oneWon += 1
@@ -196,7 +206,7 @@ class Arena():
         for i in range(second_half):
             start = time.time()
             
-            gameResult = self.playGame()
+            gameResult = self.playGame(verbose=verbose)
 
             if gameResult == -1:
                 oneWon += 1
