@@ -180,4 +180,4 @@ class MiniChessGame(Game):
 
 def display(board):
     game = Board(mcts_board=board)
-    print(ascii(game))
+    print(ascii(game.board))
