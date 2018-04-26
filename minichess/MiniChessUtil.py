@@ -44,9 +44,10 @@ def decode_piece(num, get_color = False):
 
 def encode_move(from_pos, to_pos, promotion=None, variant='alamo'):
     r,f = translate(pos)
+    pass
 
 def decode_move(num, variant='alamo'):
-
+    pass
 
 def enumerate_all_pos(variant='alamo'):
 
@@ -73,14 +74,15 @@ def get_possible_promotions(from_square, to_square, piece, color, variant='alamo
         num_ranks = BOARD_SIZE[variant]
         if (color == WHITE and r==1 and r2==0) or \
         (color == BLACK and r==num_ranks-2 and r2==num_ranks-1):
-            if variant = 'alamo':
+            if variant == 'alamo':
                 possible_promos = ['k','r','q']
             return possible_promos
         else:
             return [None]
 
 def get_potential_dests(r, f, piece, color, variant='alamo'):
-    piece_num = 
+    piece_num = 0
+    pass
 
 def evaluate_board(board, player):
     """
