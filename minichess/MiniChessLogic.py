@@ -51,7 +51,7 @@ class Board():
             set all parameters of the board
         """
 
-        self.board = mcts_board
+        self.board = mcts_board[0:5, :]
 
         last_row = mcts_board[6,:]
 
