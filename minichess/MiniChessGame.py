@@ -60,7 +60,7 @@ class MiniChessGame(Game):
         """
 
         #Build dictionary holding algebraic expressions {from:pos1, to:pos2, promo: optional)
-        move = decode_move(action)
+        move = decode_move(action, player)
 
         #Perform the move on the game board
         game.do_move(move)
@@ -96,7 +96,7 @@ class MiniChessGame(Game):
         for move in legalMoves:
 
             #Pass move dict into encode_move to return the valid move's index
-            move_index = encode_move[move]
+            move_index = encode_move(move, player)
             valids[move_index] = 1
 
         return np.array(valids)
@@ -120,16 +120,15 @@ class MiniChessGame(Game):
         board_string = self.stringRepresentation(b)
 
         #Check if a draw occured
-        if b.in_stalemate() or b.insufficient_material() or b.half_moves >= 50 or self.state_counts[board_string] >= 3:
+        if b.in_stalemate(player) or b.insufficient_material(player) or b.half_moves >= 50 or self.state_counts[board_string] >= 3:
             return 1e-2
 
         #Check if current player is in checkmate (loss)
-        if b.in_checkmate():
+        if b.in_checkmate(color):
             return -1
 
         #Check if other player is in checkmate (win)
-        b.turn = swap_color(b.turn)
-        if b.in_checkmate():
+        if b.in_checkmate(-player):
             return 1
 
         #Continue playing, game isnt over yet
@@ -162,16 +161,30 @@ class MiniChessGame(Game):
             just_board = board_copy[0:5,:] * -1
 
             #Change board orientation for black player
-            canonicalBoard = np.flipud(just_board)
-            canonicalBoard = np.fliplr(canonicalBoard)
+            canonical_board = np.flipud(just_board)
+            canonical_board = np.fliplr(canonical_board)
 
             #Attach the last row of game info back
-            canonicalBoard = np.vstack([canonicalBoard, board_copy[6,:]])
+            canonical_board = np.vstack([canonical_board, board_copy[6,:]])
 
             #Swap king positions in the last row
-            orig_white_king_pos = canonicalBoard[6,0] 
-            canonicalBoard[6,0] = canonicalBoard[6,1]
-            canonicalBoard[6,1] = orig_white_king_pos
+
+
+            #Grab algebraic positions from number value of position
+            white_king_pos = decode_square(canonical_board[6,0])
+            black_king_pos = decode_square(canonical_board[6,1])
+
+            #Reverse king positions by mirroring across the origin
+            rev_white_king_pos = reverse_square(white_king_pos)
+            rev_black_king_pos = reverse_square(black_king_pos)
+
+            #Encode both positions as number values again
+            wkp = encode_square(rev_white_king_pos)
+            bkp = encode_square(rev_black_king_pos)
+
+            #Flip the two king positions because now black player is white
+            canonical_board[6,0] = bkp
+            canonical_board[6,1] = wkp
 
             #Update current player
             canonicalBoard[6,2] = player
