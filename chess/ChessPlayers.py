@@ -46,9 +46,6 @@ class NNetNetworkPlayer():
         tmp = self.args["temp"] if "temp" in self.args else 0
         action = np.argmax(self.mcts.getActionProb(board, temp=tmp))
 
-
-
-
         move = decode_move(action)
 
         b = Board(mcts_board=board)

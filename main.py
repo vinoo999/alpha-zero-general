@@ -10,17 +10,18 @@ from utils import *
 import multiprocessing as mp
 
 args = dotdict({
-    'numIters': 100,            # Total number of iterations of self-play, training, and evaluation
+    'numIters': 50,             # Total number of iterations of self-play, training, and evaluation
     'numEps': 100,              # Number of self-play examples generated per iteration
     'tempThreshold': 100,       # Number of stochastic MCTS simulations per training game
     'updateThreshold': 0.6,     # Percent minimum number of wins during evaluation to accept new model
     'maxlenOfQueue': 200000,    # Max number of examples in training data
-    'numMCTSSims': 150,         # Number of MCTS simulations per move
+    'numMCTSSims': 100,         # Number of MCTS simulations per move
     'arenaCompare': 25,         # Number of games in evaluation step
     'cpuct': 1,                 # MCTS exploration vs exploitation parameter
+    'filter_draw_rate': 0,
 
-    'mcts_workers': 2,
-    'nnet_workers': 1,
+    'mcts_workers': 8,
+    'nnet_workers': 2,
 
     'checkpoint': './temp/',
     'load_model': False,
@@ -32,9 +33,9 @@ args = dotdict({
 def main():
     g = Game()
 
-    nsync = NNetSync()
-    nnet = AtomicNNet(nsync)
-    mp.Process(target=NNetWorker, args=(g, nsync)).start()
+    nnet = NNetManager(args.nnet_workers)
+    for i in range(args.nnet_workers):
+        mp.Process(target=NNetWorker, args=(g, nnet.nsync(i), i)).start()
 
     if args.load_model:
         nnet.load_checkpoint(args.load_folder_file[0], args.load_folder_file[1])
