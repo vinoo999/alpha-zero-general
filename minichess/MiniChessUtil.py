@@ -1,6 +1,6 @@
 import re
 import copy
-from .MiniChessConstants import *
+from MiniChessConstants import *
 import sys
 from itertools import permutations
 
@@ -10,7 +10,7 @@ def translate(pos, variant='alamo'):
         chess_file = pos[0]
         chess_rank = pos[1]
         f = ALAMO_FILE_MAPPING[chess_file]
-        r = ALAMO_RANK_MAPPING[chess_rank]
+        r = ALAMO_RANK_MAPPING[int(chess_rank)]
         return (f,r)
 
 def map_piece(piece, player):
@@ -84,7 +84,7 @@ def ascii(board):
     for chess_rank in range(board.shape[0]-1, -1, -1):
         for chess_file in range(board.shape[1]):
             if chess_file == 0:
-                s += ' ' + str(chess_rank) + ' |'
+                s += ' ' + str(chess_rank+1) + ' |'
             
             s += ' '  + decode_piece(board[chess_rank,chess_file]) + ' '
         s += '|\n'
