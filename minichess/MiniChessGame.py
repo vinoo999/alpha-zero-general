@@ -220,6 +220,8 @@ class MiniChessGame(Game):
         board_copy = copy.deepcopy(board)
 
         #Remove half_moves info
+        board_copy[6,3] = 0
+        #Remove full_moves info
         board_copy[6,4] = 0
         #Remove state_count info
         board_copy[6,5] = 0
