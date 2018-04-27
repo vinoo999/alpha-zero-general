@@ -123,35 +123,47 @@ class Board():
                     legal_moves.append({'from':from_square, 'to':dest_square, 'promotion':promo})
         return legal_moves
 
-    def get_legal_moves(self, player):
+    def get_legal_moves(self, player, variant='alamo'):
         '''
         player is a number 1 for white -1 for black
         returns all legal moves in the form (promotion is none if no promo)
         {'from': 'a2', 'to':'a1', 'promotion':'q'}
         '''
+
         move_potentials = self._get_pseudo_legal_moves(player)
+        # print("***** processing pseudo legals ***", player)
+        # print(ascii(self.board))
+        # print(move_potentials)
+
+
         legal_moves = []
+        r_limit, f_limit = BOARD_SIZE[variant]
         for move in move_potentials:
+            # print(move)
             # Check if King attacked by temporary changing state
             from_square = move['from']
             to_square = move['to']
-            r,f = translate(from_square)
-            r2,f2 = translate(to_square)
+            r,f = translate(from_square,variant)
+            r2,f2 = translate(to_square,variant)
             temp = self.board[r2,f2]
+            prev_total = self.total_moves
+            prev_half = self.half_moves
+            prev_count = self.state_count
             self.do_move({'from':from_square, 'to':to_square, 'promotion':None})
             if self.in_check(player):
-                # print("IN CHECK")
-                # print(ascii(self.board))
-                # print("Player: ", player)
                 self.do_move({'from':to_square, 'to':from_square, 'promotion':None})
                 self.board[r2,f2] = temp
-                self.total_moves -= 2
+                self.total_moves = prev_total
+                self.half_moves = prev_half
+                self.state_count = prev_count
                 continue
             self.do_move({'from':to_square, 'to':from_square, 'promotion':None})
             self.total_moves -= 2
             self.board[r2,f2] = temp
+            self.total_moves = prev_total
+            self.half_moves = prev_half
+            self.state_count = prev_count
             legal_moves.append(move)
-
         return legal_moves
 
 
@@ -240,7 +252,7 @@ class Board():
         self.board[from_r, from_f] = 0
         self.turn = -self.turn
         self.total_moves += 1
-        
+
         if piece == PAWN or captured:
             self.half_moves = 0
         else:
@@ -249,6 +261,10 @@ class Board():
         if piece == KING:
             self.kings[color] = algebraic(to_r,to_f)
 
+        if captured == KING:
+            print("********************** WTF *****************")
+            print(move)
+            print(ascii(self.board))
         return captured
 
 

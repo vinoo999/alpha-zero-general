@@ -123,11 +123,11 @@ class MiniChessGame(Game):
 
         #Grab board rep without halfmoves and statecount for indexing dict
         # board_string = self.stringRepresentation(board)
-        if b.state_count > 1:
-            print("STATE COUNT")
-            print(b.state_count)
-            display(board)
-            print("***")
+        # if b.state_count > 1:
+        #     print("STATE COUNT")
+        #     print(b.state_count)
+        #     display(board)
+        #     print("***")
 
         #Check if a draw occured
         if b.in_stalemate(player) or b.insufficient_material(player) or b.half_moves >= 50 or b.state_count >= 3:

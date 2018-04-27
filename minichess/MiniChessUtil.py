@@ -197,7 +197,7 @@ def get_potential_dests(r, f, piece, color, variant='alamo'):
     possibilities = []
     if piece == PAWN:
         possibilities.append(algebraic(r-color, f, variant))
-        if f-1 != 0:
+        if f-1 >= 0:
             possibilities.append(algebraic(r-color, f-1, variant))
         if f+1 < f_limit:
             possibilities.append(algebraic(r-color, f+1, variant))
@@ -264,12 +264,12 @@ def get_potential_dests(r, f, piece, color, variant='alamo'):
         for i in range(r+1, r_limit):
             if f+(i-r) < f_limit:
                 possibilities.append(algebraic(i, f+i-r, variant))
-            if f-(i-r) >= f_limit:
+            if f-(i-r) >= 0:
                 possibilities.append(algebraic(i, f-(i-r), variant))
         for i in range(0, r):
             if f+(r-i) < f_limit:
                 possibilities.append(algebraic(i, f+r-i, variant))
-            if f-(r-i) >= f_limit:
+            if f-(r-i) >= 0:
                 possibilities.append(algebraic(i, f-(r-i), variant))
 
 

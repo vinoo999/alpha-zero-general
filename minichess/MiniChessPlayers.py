@@ -91,16 +91,13 @@ class HumanChessPlayer():
 
             #Generate the move dictionary to pass to encode_move
             move = {'from':moveFrom, 'to':moveTo, 'promotion':promotion}
-            print(move)
-            print(board[6,2])
-            move_index = encode_move(move, board[6,2])
-            print(move_index)
+            move_index = encode_move(move, 1)
             if valid[move_index]:
             	break
             else:
             	print("Invalid move. Enter again.")
 
-            return move_index
+        return move_index
 
 
 

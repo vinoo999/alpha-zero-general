@@ -36,5 +36,5 @@ hp = HumanChessPlayer(g).play
 #mcts2 = MCTS(g, n2, args2)
 #n2p = lambda x: np.argmax(mcts2.getActionProb(x, temp=0))
 
-arena = Arena.Arena(rp, hp, g, display=display)
-print(arena.playGames(2, verbose=True))
+arena = Arena.Arena(rp, rp, g, display=display)
+print(arena.playGames(50, verbose=False))
