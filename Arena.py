@@ -1,13 +1,14 @@
-import numpy as np
 from pytorch_classification.utils import Bar, AverageMeter
-import time
-from minichess.MiniChessUtil import *
+import multiprocessing as mp
+import numpy as np
+import time, copy
+from utils import *
 
 class Arena():
     """
     An Arena class where any 2 agents can be pit against each other.
     """
-    def __init__(self, player1, player2, game, display=None):
+    def __init__(self, player1, player2, game, display=None, num_workers=1, result_queue=None):
         """
         Input:
             player 1,2: two functions that takes board as input, return action
@@ -22,7 +23,11 @@ class Arena():
         self.player2 = player2
         self.game = game
         self.display = display
+        self.num_workers = num_workers
+        self.result_queue = result_queue
 
+
+    # DEPRICATED -- use arena_worker instead
     def playGame(self, verbose=False):
         """
         Executes one episode of a game.
@@ -45,16 +50,75 @@ class Arena():
             action = players[curPlayer+1](self.game.getCanonicalForm(board, curPlayer))
 
             valids = self.game.getValidMoves(self.game.getCanonicalForm(board, curPlayer),1)
+
             if valids[action]==0:
+                print("**********************")
                 print(action)
+                print(np.where(valids>0))
                 assert valids[action] >0
             board, curPlayer = self.game.getNextState(board, curPlayer, action)
+            if self.result_queue is not None: 
+                res = self.game.getGameEnded(board, 1)
+                self.result_queue.put(None if res == 0 else res)
+
+        res = self.game.getGameEnded(board, 1)
+
         if verbose:
             assert(self.display)
-            print("Game over: Turn ", str(it), "Result ", str(self.game.getGameEnded(board, 1)))
-            print(board)
+            print("Game over: Turn ", str(it), "Result ", str(res))
+            if self.result_queue is not None: self.result_queue.put(res)
             self.display(board)
-        return self.game.getGameEnded(board, 1)
+
+        return res
+
+
+    def arena_worker(self, work_queue, done_queue, i, player1, player2):
+        print("[Worker " + str(i) + "] Started!")
+
+        while True:
+            data = work_queue.get()
+            player = data["player"]
+            game = data["game"]
+            verbose = data["verbose"]
+            eps = data["i"]
+
+            start = time.time()
+
+            players = [player2, None, player1] if player == 1 else [player1, None, player2]
+            board = game.getInitBoard()
+            curPlayer = 1
+            it = 0
+
+            while game.getGameEnded(board, curPlayer) == 0:
+                it += 1
+                if verbose:
+                    print("Turn ", str(it), "Player ", str(curPlayer))
+                    self.display(board)
+
+                action = players[curPlayer + 1](game.getCanonicalForm(board, curPlayer))
+                valids = game.getValidMoves(game.getCanonicalForm(board, curPlayer), 1)  # TODO: Is this check necessary?
+
+                if valids[action] == 0:
+                    print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<< ERROR >>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+                    print(action)
+                    print(np.where(valids > 0))
+                    assert valids[action] > 0
+
+                # The action is valid
+                board, curPlayer = game.getNextState(board, curPlayer, action)
+                if self.game.webserver: self.game.result.put(None)
+
+            res = game.getGameEnded(board, 1)
+
+            if verbose:
+                print("Game over: Turn ", str(it), "Result ", str(res))
+                if self.game.webserver: self.game.result.put(res)
+                self.display(board)
+
+            # Return the result of the game from the HUMAN (player 1) perspective
+            # NOTE: This is not the same thing as game.getGameEnded(board, curPlayer)
+            done_queue.put((time.time() - start, res))
+
 
     def playGames(self, num, verbose=False):
         """
@@ -65,50 +129,104 @@ class Arena():
             twoWon: games won by player2
             draws:  games won by nobody
         """
-        eps_time = AverageMeter()
+        tracker = ParallelRuntimes(self.num_workers)
         bar = Bar('Arena.playGames', max=num)
-        end = time.time()
-        eps = 0
-        maxeps = int(num)
 
-        num = int(num/2)
         oneWon = 0
         twoWon = 0
         draws = 0
-        for _ in range(num):
+
+        # # Multiprocess pitting
+        # proccesses = []
+        # work_queue = mp.Queue()
+        # done_queue = mp.Queue()
+
+        # print("[Master] Spawning Workers...")
+
+        # # Spawn workers
+        # for i in range(self.num_workers):
+        #     tup = (work_queue, done_queue, i, self.player1, self.player2)
+        #     proc = mp.Process(target=self.arena_worker, args=tup)
+        #     proc.start()
+
+        #     proccesses.append(proc)
+
+        # print("[Master] Adding work...")
+
+        # # Add work to queue
+        # first_half = int(num / 2)
+        # for i in range(first_half):
+        #     data = dict()
+        #     data["i"] = i
+        #     data["player"] = 1
+        #     data["game"] = copy.deepcopy(self.game)
+        #     data["verbose"] = verbose
+
+        #     work_queue.put(data)
+
+        # second_half = num - first_half
+        # for i in range(second_half):
+        #     data = dict()
+        #     data["i"] = i
+        #     data["player"] = -1            # Switch players
+        #     data["game"] = copy.deepcopy(self.game)
+        #     data["verbose"] = verbose
+
+        #     work_queue.put(data)
+
+        # print("[Master] Waiting for results...")
+
+        # Wait for results to come in
+        first_half = int(num / 2)
+        for i in range(first_half):
+            start = time.time()
+            
             gameResult = self.playGame(verbose=verbose)
-            if gameResult==1:
-                oneWon+=1
-            elif gameResult==-1:
-                twoWon+=1
+
+            if gameResult == 1:
+                oneWon += 1
+            elif gameResult == -1:
+                twoWon += 1
             else:
-                draws+=1
+                draws += 1
+
             # bookkeeping + plot progress
-            eps += 1
-            eps_time.update(time.time() - end)
-            end = time.time()
-            bar.suffix  = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(eps=eps+1, maxeps=maxeps, et=eps_time.avg,
-                                                                                                       total=bar.elapsed_td, eta=bar.eta_td)
+            tracker.update(time.time() - start)
+            bar.suffix = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(
+                           eps=i + 1, maxeps=num, et=tracker.avg(), total=bar.elapsed_td, 
+                           eta=tracker.eta(i + 1, num))
             bar.next()
 
         self.player1, self.player2 = self.player2, self.player1
-        
-        for _ in range(num):
-            gameResult = self.playGame(verbose=verbose)
-            if gameResult==-1:
-                oneWon+=1                
-            elif gameResult==1:
-                twoWon+=1
-            else:
-                draws+=1
-            # bookkeeping + plot progress
-            eps += 1
-            eps_time.update(time.time() - end)
-            end = time.time()
-            bar.suffix  = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(eps=eps+1, maxeps=num, et=eps_time.avg,
-                                                                                                       total=bar.elapsed_td, eta=bar.eta_td)
-            bar.next()
+
+        second_half = num - first_half
+        for i in range(second_half):
+            start = time.time()
             
+            gameResult = self.playGame(verbose=verbose)
+
+            if gameResult == -1:
+                oneWon += 1
+            elif gameResult == 1:
+                twoWon += 1
+            else:
+                draws += 1
+
+            # bookkeeping + plot progress
+            tracker.update(time.time() - start)
+            bar.suffix = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(
+                           eps=i + first_half + 1, maxeps=num, et=tracker.avg(), total=bar.elapsed_td, 
+                           eta=tracker.eta(i + 1, num))
+            bar.next()
+
+        # print("[Master] Killing workers...")
+
+        # # Kill workers
+        # for p in proccesses:
+        #     p.terminate()
+        #     p.join()
+
         bar.finish()
 
+        print("Player 1 Won: " + str(oneWon) + ", Player 2 Won: "+str(twoWon)+", Draws: "+str(draws))
         return oneWon, twoWon, draws
