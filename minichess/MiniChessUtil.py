@@ -275,7 +275,7 @@ def get_potential_dests(r, f, piece, color, variant='alamo'):
 
     return possibilities
 
-def evaluate_board(board, player):
+def evaluate_board(mcts_board, player):
     """
     Input: 
         mcts_board:
@@ -284,8 +284,17 @@ def evaluate_board(board, player):
     Return:
         score: score of the board relative to the current player
     """
+
+
+    #Remove the last row holding game state info when evaluating
+    board = mcts_board[0:6,:]
+
+    #print("board: " + str(board))
+    #print(type(board))
+
+
     score = 0
-    num_rows, num_cols = board.shape(board)
+    num_rows, num_cols = board.shape
 
     for row in range(num_rows):
         for col in range(num_cols):

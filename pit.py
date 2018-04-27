@@ -21,7 +21,7 @@ g = MiniChessGame()
 rp = RandomPlayer(g).play
 # gp = GreedyOthelloPlayer(g).play
 hp = HumanChessPlayer(g).play
-
+abp = AlphaBetaPlayer(g).play
 # nnet players
 # n1 = NNet(g)
 # n1.load_checkpoint('./pretrained_models/othello/pytorch/','6x100x25_best.pth.tar')
@@ -36,5 +36,5 @@ hp = HumanChessPlayer(g).play
 #mcts2 = MCTS(g, n2, args2)
 #n2p = lambda x: np.argmax(mcts2.getActionProb(x, temp=0))
 
-arena = Arena.Arena(rp, rp, g, display=display)
+arena = Arena.Arena(abp, rp, g, display=display)
 print(arena.playGames(50, verbose=False))
