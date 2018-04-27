@@ -48,10 +48,10 @@ class Coach():
             canonicalBoard = self.game.getCanonicalForm(board,self.curPlayer)
             temp = int(episodeStep < self.args.tempThreshold)
 
-            print("Episdoe: {}, State Count: {}".format(episodeStep, self.game.state_counts[self.game.stringRepresentation(board)]))
-            display(board)
-            print(canonicalBoard)
-            print(board)
+            # print("Episdoe: {}, State Count: {}".format(episodeStep, self.game.state_counts[self.game.stringRepresentation(board)]))
+            # display(board)
+            # print(canonicalBoard)
+            # print(board)
             pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
             sym = self.game.getSymmetries(canonicalBoard, pi)
             for b,p in sym:
