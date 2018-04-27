@@ -11,12 +11,12 @@ from utils import *
 from NeuralNet import NeuralNet
 
 import argparse
-from .MiniChessNNet import MiniChessNNet as minichessnet
+from .MiniChessNNet import MiniChessNNet as chessnet
 
 # import multiprocessing as mp
 
 args = dotdict({
-    'lr': 0.005,
+    'lr': 0.001,
     'dropout': 0.3,
     'epochs': 100,
     'batch_size': 64,
@@ -26,7 +26,7 @@ args = dotdict({
 
 class NNetWrapper(NeuralNet):
     def __init__(self, game):
-        self.nnet = minichessnet(game, args)
+        self.nnet = chessnet(game, args)
         self.board_x, self.board_y = game.getBoardSize()
         self.action_size = game.getActionSize()
 
