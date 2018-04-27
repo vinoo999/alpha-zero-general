@@ -54,6 +54,12 @@ class Arena():
             print("Game over: Turn ", str(it), "Result ", str(self.game.getGameEnded(board, 1)))
             print(board)
             self.display(board)
+        
+        print("Game over: Turn ", str(it), "Result ", str(self.game.getGameEnded(board, 1)))
+        print(board)
+        self.display(board)
+        
+        
         return self.game.getGameEnded(board, 1)
 
     def playGames(self, num, verbose=False):
