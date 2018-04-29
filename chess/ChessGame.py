@@ -1,14 +1,13 @@
 from __future__ import print_function
-import sys
 from .ChessLogic import Board
 from .ChessUtil import *
 from .ChessConstants import *
+from collections import defaultdict
+import numpy as np
+import copy, sys
+
 sys.path.append('..')
 from Game import Game
-import numpy as np
-import copy
-from collections import defaultdict
-from queue import Queue
 
 class ChessGame(Game):
     def __init__(self):

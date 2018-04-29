@@ -1,8 +1,9 @@
 from pytorch_classification.utils import Bar, AverageMeter
-import multiprocessing as mp
 import numpy as np
 import time, copy
 from utils import *
+
+#import multiprocessing as mp
 
 class Arena():
     """

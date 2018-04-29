@@ -18,7 +18,9 @@ args = dotdict({
     'numMCTSSims': 500,         # Number of MCTS simulations per move
     'arenaCompare': 20,         # Number of games in evaluation step
     'cpuct': 1,                 # MCTS exploration vs exploitation parameter
-    'filter_draw_rate': 0,
+    'dirichlet_alpha': 0.3      # Dirichlet noise parameter used to add stochasticity to MCTS, see AlphaZero paper for more info
+    'dirichlet_noise': 0.25     # Strength of dirichlet noise, only applied during self-play, automatically zeroed during eval
+    'filter_draw_rate': 0,      # Percent of examples that result in draws to remove during self-play
 
     'mcts_workers': 12,
     'nnet_workers': 4,

@@ -1,10 +1,8 @@
-import math
-import numpy as np
 from chess.ChessUtil import decode_move, algebraic
 from chess.ChessGame import display
-import sys
-import copy
 from random import shuffle
+import math, sys, copy
+import numpy as np
 EPS = 1e-8
 
 class MCTS():
@@ -12,7 +10,7 @@ class MCTS():
     This class handles the MCTS tree.
     """
 
-    def __init__(self, game, nnet, args):
+    def __init__(self, game, nnet, args, is_training=False):
         self.game = game
         self.nnet = nnet
         self.args = args
@@ -23,6 +21,8 @@ class MCTS():
 
         self.Es = {}        # stores game.getGameEnded ended for board s
         self.Vs = {}        # stores game.getValidMoves for board s
+
+        self.is_training = is_training
 
     def getActionProb(self, canonicalBoard, temp=1):
         """
@@ -35,30 +35,24 @@ class MCTS():
         """
         for i in range(self.args.numMCTSSims):
             tmp_game = copy.deepcopy(self.game)
-            self.search(canonicalBoard)
+            self.search(canonicalBoard, is_root_node=True)
             self.game = tmp_game
 
         s = self.game.stringRepresentation(canonicalBoard)
         counts = [self.Nsa[(s,a)] if (s,a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
-        #print("**********************************")
-        #x= list(np.where(np.array(counts) > 0)[0])
-        #tmp_map = map(decode_move, x)
-        #print(list(tmp_map))
-        #print([counts[d] for d in x])
 
-        #print("##################################")
-        if temp==0:
+        if temp == 0:
             bestA = np.argmax(counts)
-            probs = [0]*len(counts)
-            probs[bestA]=1
+            probs = [0] * len(counts)
+            probs[bestA] = 1
             return probs
 
-        counts = [x**(1./temp) for x in counts]
-        probs = [x/float(sum(counts)) for x in counts]
+        counts = [x ** (1. / temp) for x in counts]
+        probs = [x / float(sum(counts)) for x in counts]
         return probs
 
 
-    def search(self, canonicalBoard):
+    def search(self, canonicalBoard, is_root_node=False):
         """
         This function performs one iteration of MCTS. It is recursively called
         till a leaf node is found. The action chosen at each node is one that
@@ -83,15 +77,7 @@ class MCTS():
 
         game_end_score = self.game.getGameEnded(canonicalBoard, 1)
         if game_end_score != 0:
-            #print("******************************************************************")
-            #print("Game ENd: ", game_end_score)
-            #print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
             return -game_end_score
-        #if s not in self.Es:
-        #    self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
-        #if self.Es[s]!=0:
-        #    # terminal node
-        #    return -self.Es[s]
 
         if s not in self.Ps:
             # leaf node
@@ -123,6 +109,13 @@ class MCTS():
         shuffle(all_actions)
         for a in all_actions:
             if valids[a]:
+                p = self.Ps[s][a]
+                if is_root_node and self.is_training:
+                    dir_noise = self.args.dirichlet_noise
+                    dir_alpha = self.args.dirichlet_alpha
+
+                    p = (1 - dir_noise) * p + dir_noise * np.random.dirichlet([dir_alpha] * p.size)
+
                 if (s,a) in self.Qsa:
                     u = self.Qsa[(s,a)] + self.args.cpuct*self.Ps[s][a]*math.sqrt(self.Ns[s])/(1+self.Nsa[(s,a)])
                 else:

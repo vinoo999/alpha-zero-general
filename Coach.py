@@ -1,18 +1,16 @@
-from collections import deque
-from Arena import Arena
-from MCTS import MCTS
-import numpy as np
 from pytorch_classification.utils import Bar, AverageMeter
 from chess.keras.NNet import NNetWrapper as nn
-import time, os, sys
-from pickle import Pickler, Unpickler
-from random import shuffle
 from chess.ChessUtil import decode_move
 from chess.ChessGame import display
-import multiprocessing as mp
-import copy
-import random
+from collections import deque
+from _pickle import Pickler, Unpickler
+from Arena import Arena
+from MCTS import MCTS
 from utils import *
+
+import time, os, sys, copy, random
+import multiprocessing as mp
+import numpy as np
 
 
 class Coach():
@@ -101,7 +99,7 @@ class Coach():
                 canonicalBoard = game.getCanonicalForm(board, curPlayer)
 
                 temp = int(episodeStep < self.args.tempThreshold)
-                pi = mcts.getActionProb(canonicalBoard, temp=temp)
+                pi = mcts.getActionProb(canonicalBoard, temp=temp, is_training=True)
 
                 sym = game.getSymmetries(canonicalBoard, pi)
                 for b, p in sym:
@@ -209,7 +207,7 @@ class Coach():
             trainExamples = []
             for e in self.trainExamplesHistory:
                 trainExamples.extend(e)
-            shuffle(trainExamples)
+            random.shuffle(trainExamples)
 
             # training new network, keeping a copy of the old one
             self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
