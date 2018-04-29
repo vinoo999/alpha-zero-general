@@ -19,11 +19,13 @@ DEFAULT_POSITION = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
 POSSIBLE_RESULTS = ['1-0', '0-1', '1/2-1/2', '*']
 
+# Directions pawns can move: forward 1, forward 2, right (capture), left (capture)
 PAWN_OFFSETS = {
     'b': [16, 32, 17, 15],
     'w': [-16, -32, -17, -15]
 }
 
+# Directions different pieces can move
 PIECE_OFFSETS = {
     'n': [-18, -33, -31, -14,  18, 33, 31,  14],
     'b': [-17, -15,  17,  15],
@@ -50,7 +52,7 @@ MCTS_DECODER = {
     6 : 'k'
 }
 
-MCTS_COLOR_MAP = { 'w' : 1, 'b' : -1}
+MCTS_COLOR_MAP = { 'w' : 1, 'b' : -1 }
 
 ATTACKS = [
     20,0, 0, 0, 0, 0, 0, 24,  0, 0, 0, 0, 0, 0,20, 0,

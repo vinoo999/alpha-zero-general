@@ -816,13 +816,15 @@ class Board():
             #             print("possible move", moves[i])
             #             # print(move_obj)
 
-        # /* failed to find move */
-        if (not move_obj):
-            return None
+        # failed to find move
+        # if (not move_obj):
+        #     return None
 
-        # /* need to make a copy of move because we can't generate SAN after the
-        #  * move is made
-        #  */
+        # Throw error if move is not valid
+        assert move_obj
+
+        # need to make a copy of move because we can't generate SAN after the
+        # move is made
         pretty_move = make_pretty(self, move_obj)
 
         self.make_move(move_obj)

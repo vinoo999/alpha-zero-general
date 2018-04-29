@@ -11,14 +11,9 @@ from collections import defaultdict
 from queue import Queue
 
 class ChessGame(Game):
-    def __init__(self, webserver=False):
+    def __init__(self):
         self.n = 8
         self.state_counts = defaultdict(int)
-        self.webserver = webserver
-
-        # TODO: Workaround for Queue pickling error. Maybe try mp.Queue?
-        # if self.webserver:
-        #     self.result = Queue(maxsize=1)
 
     def getInitBoard(self):
         # return initial board (numpy board)
@@ -34,7 +29,8 @@ class ChessGame(Game):
         # return number of actions
         # 64*64 = number of moves from square a -> square b
         # 16*4 = 16 different moves for a pawn to promote to 4 different things
-        return self.n**4 + 64*4 + 1
+        # return self.n**4 + 64*4 + 1
+        return 4353
 
 
     def getNextState(self, board, player, action):
@@ -143,14 +139,14 @@ class ChessGame(Game):
         str_rep_no_move = self.stringRepresentation(no_move_board)
         
         if b.turn == WHITE and b.in_checkmate():
-            return -1 * player
+            return -1
 
         if b.in_stalemate() or b.insufficient_material() or b.half_moves >= 50 or self.state_counts[str_rep_no_move] >= 3:
             return 1e-2
 
         #b.turn = swap_color(b.turn)
         if b.turn == BLACK and b.in_checkmate():
-            return 1 * player
+            return 1
         
         return 0
 

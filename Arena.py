@@ -74,52 +74,51 @@ class Arena():
         return res
 
 
-    def arena_worker(self, work_queue, done_queue, i, player1, player2):
-        print("[Worker " + str(i) + "] Started!")
+    # PARALLELISM NOT IMPLEMENTED FOR ARENA
+    # def arena_worker(self, work_queue, done_queue, i, player1, player2):
+    #     print("[Worker " + str(i) + "] Started!")
 
-        while True:
-            data = work_queue.get()
-            player = data["player"]
-            game = data["game"]
-            verbose = data["verbose"]
-            eps = data["i"]
+    #     while True:
+    #         data = work_queue.get()
+    #         player = data["player"]
+    #         game = data["game"]
+    #         verbose = data["verbose"]
+    #         eps = data["i"]
 
-            start = time.time()
+    #         start = time.time()
 
-            players = [player2, None, player1] if player == 1 else [player1, None, player2]
-            board = game.getInitBoard()
-            curPlayer = 1
-            it = 0
+    #         players = [player2, None, player1] if player == 1 else [player1, None, player2]
+    #         board = game.getInitBoard()
+    #         curPlayer = 1
+    #         it = 0
 
-            while game.getGameEnded(board, curPlayer) == 0:
-                it += 1
-                if verbose:
-                    print("Turn ", str(it), "Player ", str(curPlayer))
-                    self.display(board)
+    #         while game.getGameEnded(board, curPlayer) == 0:
+    #             it += 1
+    #             if verbose:
+    #                 print("Turn ", str(it), "Player ", str(curPlayer))
+    #                 self.display(board)
 
-                action = players[curPlayer + 1](game.getCanonicalForm(board, curPlayer))
-                valids = game.getValidMoves(game.getCanonicalForm(board, curPlayer), 1)  # TODO: Is this check necessary?
+    #             action = players[curPlayer + 1](game.getCanonicalForm(board, curPlayer))
+    #             valids = game.getValidMoves(game.getCanonicalForm(board, curPlayer), 1)  # TODO: Is this check necessary?
 
-                if valids[action] == 0:
-                    print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<< ERROR >>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-                    print(action)
-                    print(np.where(valids > 0))
-                    assert valids[action] > 0
+    #             if valids[action] == 0:
+    #                 print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<< ERROR >>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    #                 print(action)
+    #                 print(np.where(valids > 0))
+    #                 assert valids[action] > 0
 
-                # The action is valid
-                board, curPlayer = game.getNextState(board, curPlayer, action)
-                if self.game.webserver: self.game.result.put(None)
+    #             # The action is valid
+    #             board, curPlayer = game.getNextState(board, curPlayer, action)
 
-            res = game.getGameEnded(board, 1)
+    #         res = game.getGameEnded(board, 1)
 
-            if verbose:
-                print("Game over: Turn ", str(it), "Result ", str(res))
-                if self.game.webserver: self.game.result.put(res)
-                self.display(board)
+    #         if verbose:
+    #             print("Game over: Turn ", str(it), "Result ", str(res))
+    #             self.display(board)
 
-            # Return the result of the game from the HUMAN (player 1) perspective
-            # NOTE: This is not the same thing as game.getGameEnded(board, curPlayer)
-            done_queue.put((time.time() - start, res))
+    #         # Return the result of the game from the HUMAN (player 1) perspective
+    #         # NOTE: This is not the same thing as game.getGameEnded(board, curPlayer)
+    #         done_queue.put((time.time() - start, res))
 
 
     def playGames(self, num, verbose=False):
