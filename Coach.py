@@ -23,7 +23,7 @@ class Coach():
         self.nnet = nnet
         self.pnet = nn(self.game)  # the competitor network
         self.args = args
-        self.mcts = MCTS(self.game, self.nnet, self.args)
+        #self.mcts = MCTS(self.game, self.nnet, self.args)
         self.trainExamplesHistory = []    # history of examples from args.numItersForTrainExamplesHistory latest iterations
         self.skipFirstSelfPlay = False # can be overriden in loadTrainExamples()
 
@@ -86,7 +86,7 @@ class Coach():
             start = time.time()
 
             # Create our MCTS instance
-            mcts = MCTS(game, self.nnet, self.args)
+            mcts = MCTS(game, self.nnet, self.args, is_training=True)
 
             # Start "executeEpisode()"
             trainExamples = []
@@ -99,7 +99,7 @@ class Coach():
                 canonicalBoard = game.getCanonicalForm(board, curPlayer)
 
                 temp = int(episodeStep < self.args.tempThreshold)
-                pi = mcts.getActionProb(canonicalBoard, temp=temp, is_training=True)
+                pi = mcts.getActionProb(canonicalBoard, temp=temp)
 
                 sym = game.getSymmetries(canonicalBoard, pi)
                 for b, p in sym:
