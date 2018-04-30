@@ -133,11 +133,11 @@ class ChessGame(Game):
         if b.turn == WHITE and b.in_checkmate():
             return -1 * player
 
-        if b.in_stalemate() or b.insufficient_material() or b.half_moves >= 50 or self.state_counts[str_rep_no_move] >= 3:
-            return 1e-2
-
         if b.turn == BLACK and b.in_checkmate():
             return 1 * player
+
+        if b.in_stalemate() or b.insufficient_material() or b.half_moves >= 50 or self.state_counts[str_rep_no_move] >= 3:
+            return 1e-4
         
         return 0
 
