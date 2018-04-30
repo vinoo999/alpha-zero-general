@@ -22,12 +22,13 @@ rp = RandomPlayer(g).play
 # gp = GreedyOthelloPlayer(g).play
 hp = HumanChessPlayer(g).play
 abp = AlphaBetaPlayer(g).play
+
 # nnet players
-# n1 = NNet(g)
-# n1.load_checkpoint('./pretrained_models/othello/pytorch/','6x100x25_best.pth.tar')
-# args1 = dotdict({'numMCTSSims': 50, 'cpuct':1.0})
-# mcts1 = MCTS(g, n1, args1)
-# n1p = lambda x: np.argmax(mcts1.getActionProb(x, temp=0))
+n1 = NNet(g)
+n1.load_checkpoint('./temp/','temp.pth.tar')
+args1 = dotdict({'numMCTSSims': 50, 'cpuct':1.0})
+mcts1 = MCTS(g, n1, args1)
+n1p = lambda x: np.argmax(mcts1.getActionProb(x, temp=0))
 
 
 #n2 = NNet(g)
@@ -36,5 +37,5 @@ abp = AlphaBetaPlayer(g).play
 #mcts2 = MCTS(g, n2, args2)
 #n2p = lambda x: np.argmax(mcts2.getActionProb(x, temp=0))
 
-arena = Arena.Arena(abp, rp, g, display=display)
-print(arena.playGames(50, verbose=False))
+arena = Arena.Arena(n1p, abp, g, display=display)
+print(arena.playGames(10, verbose=True))

@@ -132,7 +132,7 @@ class AlphaBetaPlayer():
 
     def __init__(self, game):
         self.game = game
-        self.depth =2
+        self.depth = 2
 
     def play(self, board):
         """Returns the best move as variable *num* """
@@ -142,7 +142,7 @@ class AlphaBetaPlayer():
 
         infinity = float('inf')
 
-        player = board[6][2]
+        player =1
 
         is_maximising_player = True
 
@@ -209,15 +209,12 @@ class AlphaBetaPlayer():
                 best_moves_scores[worst_move] = value
                 best_moves[worst_move] = new_game_move
 
-        #print("COLOR: {} \nBEST MOVES: {} \n SCORES {} \n DECISION: {} \n DECISION SCORE: {}".format(player, list(map(decode_move, best_moves, player)), best_moves_scores, decode_move(best_move, player), best_move_score))
-        print("COLOR: {} \n DECISION: {} \n DECISION SCORE: {}".format(player, decode_move(best_move, player), best_move_score))
+        #print("COLOR: {} \nBEST MOVES: {} \n SCORES {} \n DECISION: {} \n DECISION SCORE: {}".format(player, list(map(decode_move, best_moves, player)), best_moves_scores, decode_move(best_move, player), best_move_score))        print("COLOR: {} \n DECISION: {} \n DECISION SCORE: {}".format(player, decode_move(best_move, player), best_move_score))
         print("COLOR: {} \nBEST MOVES: {} \n SCORES {} \n DECISION: {} \n DECISION SCORE: {}".format(player, [decode_move(m,player) for m in best_moves], best_moves_scores, decode_move(best_move, player), best_move_score))
 
-        # print("Finished a decision.")
-        # #display(board)
-        # input("continue?")
-        # print("-----------------------------------------------")
-        # print("")
+        #print("COLOR: {} \n DECISION: {} \n DECISION SCORE: {}".format(player, decode_move(best_move, player), best_move_score))
+        # print("COLOR: {} \nBEST MOVES: {} \n SCORES {} \n DECISION: {} \n DECISION SCORE: {}".format(player, [decode_move(m,player) for m in best_moves], best_moves_scores, decode_move(best_move, player), best_move_score))
+
         #end = timer()
         #print("Time elapsed: " + str(end - start))
 
