@@ -107,26 +107,31 @@ class MCTS():
         # pick the action with the highest upper confidence bound
         all_actions = list(range(self.game.getActionSize()))
         shuffle(all_actions)
+
+        if is_root_node and self.is_training:
+            d_i = 0
+            d_a = self.args.dirichlet_alpha
+            dir_noise = np.random.dirichlet([d_a] * np.sum(valids))
+
         for a in all_actions:
             if valids[a]:
                 p = self.Ps[s][a]
                 if is_root_node and self.is_training:
-                    dir_noise = self.args.dirichlet_noise
-                    dir_alpha = self.args.dirichlet_alpha
-
-                    p = (1 - dir_noise) * p + dir_noise * np.random.dirichlet([dir_alpha] * p.size)
+                    d_e = self.args.dirichlet_noise
+                    p = (1 - d_e) * p + d_e * dir_noise[d_i]
+                    d_i += 1
 
                 if (s,a) in self.Qsa:
-                    u = self.Qsa[(s,a)] + self.args.cpuct*self.Ps[s][a]*math.sqrt(self.Ns[s])/(1+self.Nsa[(s,a)])
+                    u = self.Qsa[(s,a)] + self.args.cpuct * p * math.sqrt(self.Ns[s]) / (1 + self.Nsa[(s,a)])
                 else:
-                    u = self.args.cpuct*self.Ps[s][a]*math.sqrt(self.Ns[s] + EPS)     # Q = 0 ?
+                    u = self.args.cpuct * p * math.sqrt(self.Ns[s] + EPS)     # Q = 0 ?
 
                 if u > cur_best:
                     cur_best = u
                     best_act = a
 
         a = best_act
-        
+
         where = np.where(valids==1)
         testing = list(map(decode_move, list(np.where(valids==1))[0]))
         next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
