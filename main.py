@@ -10,7 +10,7 @@ from utils import *
 import multiprocessing as mp
 
 args = dotdict({
-    'numIters': 50,             # Total number of iterations of self-play, training, and evaluation
+    'numIters': 100,            # Total number of iterations of self-play, training, and evaluation
     'numEps': 100,              # Number of self-play examples generated per iteration
     'tempThreshold': 50,        # Number of stochastic MCTS simulations per training game
     'updateThreshold': 0.5,     # Percent minimum number of wins during evaluation to accept new model
@@ -27,7 +27,7 @@ args = dotdict({
 
     'checkpoint': './temp/',
     'load_model': False,
-    'load_folder_file': ('saves/','best.pth.tar'),
+    'load_folder_file': ('temp/','checkpoint_2.pth.tar'),
     'numItersForTrainExamplesHistory': 20
 })
 

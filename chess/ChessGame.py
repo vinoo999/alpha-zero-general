@@ -138,14 +138,14 @@ class ChessGame(Game):
         str_rep_no_move = self.stringRepresentation(no_move_board)
         
         if b.turn == WHITE and b.in_checkmate():
-            return -1
+            return -1 * player
 
         if b.in_stalemate() or b.insufficient_material() or b.half_moves >= 50 or self.state_counts[str_rep_no_move] >= 3:
             return 1e-2
 
         #b.turn = swap_color(b.turn)
         if b.turn == BLACK and b.in_checkmate():
-            return 1
+            return 1 * player
         
         return 0
 

@@ -110,6 +110,9 @@ class Coach():
                 res = game.getGameEnded(board, curPlayer)
 
                 if res != 0:
+                    print("Game done!  Res=" + str(res) + "  CurPlayer=" + str(curPlayer))
+                    display(board)
+
                     examples = [(x[0], x[2], res * ((-1) ** (x[1] != curPlayer))) for x in trainExamples]
                     done_queue.put((time.time() - start, examples))
                     break
@@ -165,10 +168,10 @@ class Coach():
                 for ep in range(self.args.numEps):
                     runtime, examples = done_queue.get()
                     
-                    # Drop 80% of draws
+                    # Drop filter_draw_rate draws
                     to_add = False
                     loss_rate = self.args.filter_draw_rate
-                    if abs(examples[0][2]) != 1:
+                    if abs(examples[0][2]) == 1:
                         if random.random() >= loss_rate:
                             to_add = True
                     else:
