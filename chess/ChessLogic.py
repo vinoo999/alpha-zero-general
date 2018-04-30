@@ -473,11 +473,13 @@ class Board():
         return False
 
     def in_threefold_repetition(self):
-        # /* TODO: while this function is fine for casual use, a better
-        #  * implementation would use a Zobrist key (instead of FEN). the
-        #  * Zobrist key would be maintained in the make_move/undo_move functions,
-        #  * avoiding the costly that we do below.
-        #  */
+        """
+        TODO: while this function is fine for casual use, a better
+        implementation would use a Zobrist key (instead of FEN). the
+        Zobrist key would be maintained in the make_move/undo_move functions,
+        avoiding the costly that we do below.
+        """
+        
         moves = []
         positions = {}
         repetition = False
@@ -694,25 +696,25 @@ class Board():
     ####################################################
     ################### Other Things ###################
     ####################################################
-    def get_board(self):
-        output = []
-        row    = []
+    # def get_board(self):
+    #     output = []
+    #     row    = []
 
-        i = SQUARES['a8']
-        while i < SQUARES['h1'] + 1:
-        # for i in range(SQUARES['a8'], SQUARES['h1']+1):
-            if (self.board[i] == None):
-                row.append(None)
-            else:
-                row.append({'type': self.board[i]['type'], 'color': self.board[i]['color']})
+    #     i = SQUARES['a8']
+    #     while i < SQUARES['h1'] + 1:
+    #     # for i in range(SQUARES['a8'], SQUARES['h1']+1):
+    #         if (self.board[i] == None):
+    #             row.append(None)
+    #         else:
+    #             row.append({'type': self.board[i]['type'], 'color': self.board[i]['color']})
             
-            if ((i + 1) & 0x88):
-                output.append(row)
-                row = []
-                i += 8
-            i+=1
+    #         if ((i + 1) & 0x88):
+    #             output.append(row)
+    #             row = []
+    #             i += 8
+    #         i+=1
 
-        return output
+    #     return output
 
     def get_board_mcts(self):
         output = []
@@ -835,21 +837,21 @@ class Board():
         move = self.undo_move()
         return make_pretty(self, move) if (move) else None   
 
-    def get_history(self, options):
-        reversed_history = []
-        move_history = []
-        verbose = (isinstance(options,dict) and 'verbose' in options.keys() and options['verbose'])
+    # def get_history(self, options):
+    #     reversed_history = []
+    #     move_history = []
+    #     verbose = (isinstance(options,dict) and 'verbose' in options.keys() and options['verbose'])
 
-        while (len(history) > 0):
-            reversed_history.append(self.undo_move())
+    #     while (len(history) > 0):
+    #         reversed_history.append(self.undo_move())
 
-        while (len(reversed_history) > 0):
-            move = reversed_history.pop()
-            if (verbose):
-                move_history.append(make_pretty(self, move))
-            else:
-                move_history.append(move_to_san(self, move))
-            self.make_move(move)
+    #     while (len(reversed_history) > 0):
+    #         move = reversed_history.pop()
+    #         if (verbose):
+    #             move_history.append(make_pretty(self, move))
+    #         else:
+    #             move_history.append(move_to_san(self, move))
+    #         self.make_move(move)
 
-        return move_history
+    #     return move_history
 

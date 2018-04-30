@@ -213,11 +213,6 @@ def ascii(chess):
 
     return s
 
-# // parses all of the decorators out of a SAN string
-def stripped_san(move):
-    return move.replace('=','').replace('[+#]?[?!]*$','')
-
-
 def rank(i):
     return i >> 4
 
@@ -244,6 +239,7 @@ def swap_color(c):
 
 def is_digit(c):
     return c.isdigit()
+
 # /* pretty = external move object */
 def make_pretty(chess, ugly_move):
     move = copy.deepcopy(ugly_move)
@@ -259,24 +255,6 @@ def make_pretty(chess, ugly_move):
     move['flags'] = flags
 
     return move
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # def evaluate_board_old(mcts_board, b, player):
@@ -317,11 +295,6 @@ def make_pretty(chess, ugly_move):
 #     return val
 
 
-
-
-
-
-
 def evaluate_board(mcts_board, player):
     """Calculate the total score for board state from a given player's point of view"""
 
@@ -353,7 +326,6 @@ def evaluate_board(mcts_board, player):
             val += single_piece_val
 
     return val    
-
 
 
 def get_piece_value(piece, i, j, piece_color):
@@ -394,34 +366,31 @@ def get_piece_value(piece, i, j, piece_color):
     return value
 
 
-
-
-def trim(str):
-    return str.replace('^\s+|\s+$', '')
+# def trim(str):
+#     return str.replace('^\s+|\s+$', '')
 
 ##########################################
 # DEBUGGING UTILITIES
-########################################
-def perft(chess, depth):
-    moves = chess.generate_moves({legal: false})
-    nodes = 0
-    color = turn
+# ########################################
+# def perft(chess, depth):
+#     moves = chess.generate_moves({legal: false})
+#     nodes = 0
+#     color = turn
 
-    i = 0
-    while i < len(moves):
-        make_move(moves[i])
-        if (not king_attacked(color)):
-            if (depth - 1 > 0):
-                child_nodes = perft(depth - 1)
-                nodes += child_nodes
-            else:
-                nodes+=1
-        chess.undo_move()
-        i+=1
-    return nodes
+#     i = 0
+#     while i < len(moves):
+#         make_move(moves[i])
+#         if (not king_attacked(color)):
+#             if (depth - 1 > 0):
+#                 child_nodes = perft(depth - 1)
+#                 nodes += child_nodes
+#             else:
+#                 nodes+=1
+#         chess.undo_move()
+#         i+=1
+#     return nodes
 
 def decode_move(action):
-
     if action == 64*64-1:
         return "Switch Player"
 
@@ -458,6 +427,3 @@ def decode_move(action):
         move = {'from' : pos1, 'to' : pos2, 'promotion' : MCTS_DECODER[promotion]}
 
         return move
-
-
-
