@@ -30,6 +30,9 @@ class RandomPlayer():
         valids = self.game.getValidMoves(board, 1)
         while valids[a]!=1:
             a = np.random.randint(self.game.getActionSize())
+        display(board)
+        print("a: "+str(a))
+            #print(decode_move(a, 1))
         return a
 
 class NNetPlayer():
@@ -56,6 +59,18 @@ class HumanChessPlayer():
         # display(board)
         #TODO: Are we always assuming oriented as player = 1???????
         valid = self.game.getValidMoves(board, 1)
+        new_game_moves = [i for i, e in enumerate(valid) if e != 0]
+        player = board[6][2]
+
+
+        print("Current board for player: " +str(player))
+        print("Number of moves available: " + str(len(new_game_moves)))
+
+        display(board)
+        print("legal moves:")
+        for i in range(len(new_game_moves)):
+            print(str(decode_move(new_game_moves[i], player)))
+
 
         while True:
             display(board)
@@ -91,8 +106,15 @@ class HumanChessPlayer():
 
             #Generate the move dictionary to pass to encode_move
             move = {'from':moveFrom, 'to':moveTo, 'promotion':promotion}
-            move_index = encode_move(move, 1)
+            print("move: " +str(move))
+
+            move_index = encode_move(move, player)
+            print("move_index: " +str(move_index))
+
+            print("cast back: " + str(decode_move(move_index, player)))
+
             if valid[move_index]:
+            	print("valid!")
             	break
             else:
             	print("Invalid move. Enter again.")
@@ -133,6 +155,16 @@ class AlphaBetaPlayer():
         new_game_moves = self.game.getValidMoves(board, player)
         new_game_moves = [i for i, e in enumerate(new_game_moves) if e != 0]
 
+        # print("Current board for player: " +str(player))
+        # print("Number of moves available: " + str(len(new_game_moves)))
+
+        # display(board)
+        # print("legal moves:")
+        # for i in range(len(new_game_moves)):
+        #     print(str(decode_move(new_game_moves[i], player)))
+
+        
+
         legal_moves_values = [0]*len(new_game_moves)
 
 
@@ -159,7 +191,7 @@ class AlphaBetaPlayer():
 
             
             #Play the game starting with this move up to 'depth' and assess it's value
-            value = self.minimax(depth - 1, new_board_state, self.game, -infinity, infinity, player*-1, not is_maximising_player)#1-player)
+            value = self.minimax(depth - 1, new_board_state, self.game, -infinity, infinity, -player, not is_maximising_player)#1-player)
 
             legal_moves_values[i] = value
 
@@ -181,13 +213,23 @@ class AlphaBetaPlayer():
                 best_moves_scores[worst_move] = value
                 best_moves[worst_move] = new_game_move
 
-        print("Number of moves available: " + str(len(new_game_moves)))
         #print("COLOR: {} \nBEST MOVES: {} \n SCORES {} \n DECISION: {} \n DECISION SCORE: {}".format(player, list(map(decode_move, best_moves, player)), best_moves_scores, decode_move(best_move, player), best_move_score))
+<<<<<<< HEAD
         print("COLOR: {} \n DECISION: {} \n DECISION SCORE: {}".format(player, decode_move(best_move, player), best_move_score))
         print("Finished a decision.")
         
         # print(display(board))
 
+=======
+        #print("COLOR: {} \n DECISION: {} \n DECISION SCORE: {}".format(player, decode_move(best_move, player), best_move_score))
+        # print("COLOR: {} \nBEST MOVES: {} \n SCORES {} \n DECISION: {} \n DECISION SCORE: {}".format(player, [decode_move(m,player) for m in best_moves], best_moves_scores, decode_move(best_move, player), best_move_score))
+
+        # print("Finished a decision.")
+        # #display(board)
+        # input("continue?")
+        # print("-----------------------------------------------")
+        # print("")
+>>>>>>> e12e693741a8d75a1132a60405d4d1dd0b4513bc
         #end = timer()
         #print("Time elapsed: " + str(end - start))
 
@@ -197,9 +239,19 @@ class AlphaBetaPlayer():
     def minimax(self, depth, board, game, alpha, beta, player, is_maximising_player):
  
         infinity = float('inf')
+        # print("---------------------------------------------------------")
+        # print("At depth:" + str(depth))
+        # display(board)
+        # print("score: " + str(self.game.getScore(board, player)))
+        # print("---------------------------------------------------------")
 
         #Base case where we've reached the max depth to explore
         if depth == 0:
+            # print("---------------------------------------------------------")
+            # print("At depth 0")
+            # display(board)
+            # print("score: " + str(self.game.getScore(board, player)))
+            # print("---------------------------------------------------------")
             return self.game.getScore(board, player)
 
         #Get all available moves stemming from the new board state
@@ -218,7 +270,7 @@ class AlphaBetaPlayer():
                 tmp_game = self.game#copy.deepcopy(self.game)
                 new_board_state = tmp_game.getNextState(board_copy, player, new_game_move)[0]
 
-                best_move_score = max(best_move_score, self.minimax(depth - 1, new_board_state, tmp_game, -infinity, infinity, player*-1, not is_maximising_player))
+                best_move_score = max(best_move_score, self.minimax(depth - 1, new_board_state, tmp_game, -infinity, infinity, -player, not is_maximising_player))
 
                 #Decrement the count so that we dont include boards that were touched in the search tree
                 self.game.state_counts[self.game.stringRepresentation(new_board_state)] -= 1
@@ -243,7 +295,7 @@ class AlphaBetaPlayer():
 
                 new_board_state = tmp_game.getNextState(board_copy, player, new_game_move)[0]
 
-                best_move_score = min(best_move_score, self.minimax(depth - 1, new_board_state, self.game, -infinity, infinity, player*-1, not is_maximising_player))
+                best_move_score = min(best_move_score, self.minimax(depth - 1, new_board_state, self.game, -infinity, infinity, -player, not is_maximising_player))
 
                 #Decrement the count so that we dont include boards that were touched in the search tree
                 self.game.state_counts[self.game.stringRepresentation(new_board_state)] -= 1
