@@ -21,52 +21,10 @@ class Coach():
     def __init__(self, game, nnet, args):
         self.game = game
         self.nnet = nnet
-        self.pnet = nn(self.game)  # the competitor network
+        self.pnet = nn(self.game)        # The competitor network
         self.args = args
-        #self.mcts = MCTS(self.game, self.nnet, self.args)
-        self.trainExamplesHistory = []    # history of examples from args.numItersForTrainExamplesHistory latest iterations
-        self.skipFirstSelfPlay = False # can be overriden in loadTrainExamples()
-
-
-    # DEPRICATED -- use coach_worker instead
-    # def executeEpisode(self):
-    #     """
-    #     This function executes one episode of self-play, starting with player 1.
-    #     As the game is played, each turn is added as a training example to
-    #     trainExamples. The game is played till the game ends. After the game
-    #     ends, the outcome of the game is used to assign values to each example
-    #     in trainExamples.
-
-    #     It uses a temp=1 if episodeStep < tempThreshold, and thereafter
-    #     uses temp=0.
-
-    #     Returns:
-    #         trainExamples: a list of examples of the form (canonicalBoard,pi,v)
-    #                        pi is the MCTS informed policy vector, v is +1 if
-    #                        the player eventually won the game, else -1.
-    #     """
-    #     trainExamples = []
-    #     board = self.game.getInitBoard()
-    #     self.curPlayer = 1
-    #     episodeStep = 0
-
-    #     while True:
-    #         episodeStep += 1
-    #         canonicalBoard = self.game.getCanonicalForm(board,self.curPlayer)
-    #         temp = int(episodeStep < self.args.tempThreshold)
-    #         pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
-    #         sym = self.game.getSymmetries(canonicalBoard, pi)
-    #         for b,p in sym:
-    #             trainExamples.append([b, self.curPlayer, p, None])
-
-    #         action = np.random.choice(len(pi), p=pi)
-            
-    #         board, self.curPlayer = self.game.getNextState(board, self.curPlayer, action)
-
-    #         r = self.game.getGameEnded(board, self.curPlayer)
-
-    #         if r!=0:
-    #             return [(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples]
+        self.trainExamplesHistory = []   # History of examples from args.numItersForTrainExamplesHistory latest iterations
+        self.skipFirstSelfPlay = False   # Can be overriden in loadTrainExamples()
 
 
     def coach_worker(self, work_queue, done_queue, i):
@@ -112,11 +70,11 @@ class Coach():
                 if res != 0:
                     examples = [(x[0], x[2], res * ((-1) ** (x[1] != curPlayer))) for x in trainExamples]
 
-                    for i, x in enumerate(reversed(trainExamples)):
-                        print("end - " + str(i + 1) + " step:   ex[2]=" + str(res * ((-1) ** (x[1] != curPlayer))))
+                    # for i, x in enumerate(reversed(trainExamples)):
+                    #     print("end - " + str(i + 1) + " step:   ex[2]=" + str(res * ((-1) ** (x[1] != curPlayer))))
 
-                    print("Game done!  Res=" + str(res) + "  CurPlayer=" + str(curPlayer))
-                    display(board)
+                    # print("Game done!  Res=" + str(res) + "  CurPlayer=" + str(curPlayer))
+                    # display(board)
 
                     done_queue.put((time.time() - start, examples))
                     break

@@ -1,8 +1,5 @@
-import re
-import copy
 from .ChessConstants import *
-import sys
-
+import re, copy, sys
 
 # /*****************************************************************************
  # * UTILITY FUNCTIONS
@@ -151,9 +148,6 @@ def move_to_san(chess, move, sloppy=None) :
      */'''
 
     output = ''
-    # print("MOVE:", move)
-    # print("FLAGS:", move['flags'])
-    # print("FROM: {} TO: {}".format(move['from'], move['to']))
     if (move['flags'] & BITS['KSIDE_CASTLE']):
         output = 'O-O'
     elif (move['flags'] & BITS['QSIDE_CASTLE']):
@@ -162,8 +156,6 @@ def move_to_san(chess, move, sloppy=None) :
         disambiguator = chess.get_disambiguator(move, sloppy)
 
         if (move['piece'] != PAWN):
-            # print("PIECE: ",move['piece'])
-            # print("DISAMBIG: ", disambiguator)
             output += move['piece'].upper() + disambiguator
 
         if (move['flags'] & (BITS['CAPTURE'] | BITS['EP_CAPTURE'])):
@@ -191,7 +183,6 @@ def ascii(chess):
     s = '   +------------------------+\n'
     i = SQUARES['a8']
     while i < SQUARES['h1'] + 1:
-    # for i in range(SQUARES['a8'], SQUARES['h1']+1):
         # /* display the rank */
         if (col_file(i) == 0):
             s += ' ' + '87654321'[rank(i)] + ' |'
@@ -257,44 +248,6 @@ def make_pretty(chess, ugly_move):
     return move
 
 
-# def evaluate_board_old(mcts_board, b, player):
-#     board = mcts_board[0:8,:]
-#     #print("evaluate the board for player: " + str(player))
-
-#     val = 0
-#     for row in range(8):
-#         for col in range(8):
-#             piece_key = abs(board[row,col])
-#             print("--------------------------------------------")
-#             print(str('abcdefgh'[col]) +", "+ str('87654321'[row]))
-#             sign = -1 if board[row,col] < 0 else 1
-#             piece = MCTS_DECODER[piece_key]
-#             print("piece_key: " + str(piece_key)+", piece: " + str(piece))
-#             print("value here: " + str(get_piece_value(piece, row, col, sign)))
-#             print("--------------------------------------------")
-#             if(piece_key == 0):
-#                 continue
-#             piece = MCTS_DECODER[piece_key]
-#             #print("piece: " + str(piece))
-#             sign = -1 if board[row,col] < 0 else 1
-#             #print("sign: " + str(sign))
-#             val += get_piece_value(piece, row, col, sign)
-
-#             #print("piece is: " +str(piece) + ". piece val: " + str(get_piece_value(piece,row,col, sign)))
-#             #print(str('abcdefgh'[col]) +", "+ str('87654321'[row])+ ": total val is = " + str(val))
-#             #input("continue?")
-
-#     print("")
-#     print("EVAL BOARD-------------------------------------")
-#     print("PLayer is: " + str(player))
-#     print("FINAL VAL: " + str(val))
-#     print()
-#     input("continue?")
-
-
-#     return val
-
-
 def evaluate_board(mcts_board, player):
     """Calculate the total score for board state from a given player's point of view"""
 
@@ -304,10 +257,6 @@ def evaluate_board(mcts_board, player):
     for row in range(8):
         for col in range(8):
             piece_key = abs(board[row,col])
-
-            #print("--------------------------------------------")
-            #print(str('abcdefgh'[col]) +", "+ str('87654321'[row]))
-            #print("piece_key: " + str(piece_key))
 
             #Ignore all positions on the board without a piece
             if(piece_key == 0):
@@ -366,29 +315,10 @@ def get_piece_value(piece, i, j, piece_color):
     return value
 
 
-# def trim(str):
-#     return str.replace('^\s+|\s+$', '')
 
 ##########################################
 # DEBUGGING UTILITIES
 # ########################################
-# def perft(chess, depth):
-#     moves = chess.generate_moves({legal: false})
-#     nodes = 0
-#     color = turn
-
-#     i = 0
-#     while i < len(moves):
-#         make_move(moves[i])
-#         if (not king_attacked(color)):
-#             if (depth - 1 > 0):
-#                 child_nodes = perft(depth - 1)
-#                 nodes += child_nodes
-#             else:
-#                 nodes+=1
-#         chess.undo_move()
-#         i+=1
-#     return nodes
 
 def decode_move(action):
     if action == 64*64-1:

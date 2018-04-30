@@ -3,6 +3,7 @@ from chess.ChessGame import display
 from random import shuffle
 import math, sys, copy
 import numpy as np
+
 EPS = 1e-8
 
 class MCTS():
@@ -34,6 +35,8 @@ class MCTS():
                    proportional to Nsa[(s,a)]**(1./temp)
         """
         for i in range(self.args.numMCTSSims):
+            # Have to copy game state so we don't wreck state_counts and cause a 
+            # three-fold draw from the MCTS search
             tmp_game = copy.deepcopy(self.game)
             self.search(canonicalBoard, is_root_node=True)
             self.game = tmp_game
@@ -71,7 +74,6 @@ class MCTS():
         Returns:
             v: the negative of the value of the current canonicalBoard
         """
-        # print("SEARCH")
 
         s = self.game.stringRepresentation(canonicalBoard)
 
@@ -136,7 +138,6 @@ class MCTS():
         testing = list(map(decode_move, list(np.where(valids==1))[0]))
         next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
         next_s = self.game.getCanonicalForm(next_s, next_player)
-        # print("SEARCHing again...")
         v = self.search(next_s)
 
         if (s,a) in self.Qsa:

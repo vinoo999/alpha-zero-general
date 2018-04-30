@@ -15,14 +15,11 @@ class ChessGame(Game):
         self.state_counts = defaultdict(int)
 
     def getInitBoard(self):
-        # return initial board (numpy board)
-        game = Board()
         self.state_counts = defaultdict(int)
-        return np.array(game.get_board_mcts())
+        return np.array(Board().get_board_mcts())
 
     def getBoardSize(self):
-        # (a,b) tuple
-        return (self.n+1, self.n)
+        return (self.n + 1, self.n)
 
     def getActionSize(self):
         # return number of actions
@@ -41,11 +38,10 @@ class ChessGame(Game):
 
         if action == self.getActionSize()-1:
             game.turn = swap_color(game.turn)
+
             next_board = np.array(game.get_board_mcts())
-            no_move_board = copy.deepcopy(next_board)
-            no_move_board[8,6] = 0
-            no_move_board[8,7] = 0
-            self.state_counts[self.stringRepresentation(no_move_board)] += 1
+            self.state_counts[self.stringRepresentation(next_board)] += 1
+
             return (next_board, -player)
 
         elif action < self.getActionSize() - 64*4 - 1:
@@ -53,6 +49,7 @@ class ChessGame(Game):
             file1 = 'abcdefgh'[tmp//8]
             rank1 = '87654321'[tmp%8]
             pos1 = file1 + rank1
+
             tmp2 = action % 64
             file2 = 'abcdefgh'[tmp2//8]
             rank2 = '87654321'[tmp2%8]
@@ -60,11 +57,10 @@ class ChessGame(Game):
 
             move = {'from' : pos1, 'to' : pos2}
             game.do_move(move)
+
             next_board = np.array(game.get_board_mcts())
-            no_move_board = copy.deepcopy(next_board)
-            no_move_board[8,6] = 0
-            no_move_board[8,7] = 0
-            self.state_counts[self.stringRepresentation(no_move_board)] += 1
+            self.state_counts[self.stringRepresentation(next_board)] += 1
+
             return (next_board, -player)
 
         else:
@@ -83,15 +79,15 @@ class ChessGame(Game):
 
             pos1 = file1 + rank1
             pos2 = file2 + rank2
-            move = {'from' : pos1, 'to' : pos2, 'promotion' : MCTS_DECODER[promotion]}
 
+            move = {'from' : pos1, 'to' : pos2, 'promotion' : MCTS_DECODER[promotion]}
             game.do_move(move)
+
             next_board = np.array(game.get_board_mcts())
-            no_move_board = copy.deepcopy(next_board)
-            no_move_board[8,6] = 0
-            no_move_board[8,7] = 0
-            self.state_counts[self.stringRepresentation(no_move_board)] += 1
+            self.state_counts[self.stringRepresentation(next_board)] += 1
+
             return (next_board, -player)
+
 
     def getValidMoves(self, board, player):
         # return a fixed size binary vector
@@ -129,13 +125,10 @@ class ChessGame(Game):
 
         return np.array(valids)
 
+
     def getGameEnded(self, board, player):
         b = Board(mcts_board=board)
-
-        no_move_board = copy.deepcopy(board) # TODO: Or you could just get b.board since it was just copied
-        no_move_board[8,6] = 0
-        no_move_board[8,7] = 0
-        str_rep_no_move = self.stringRepresentation(no_move_board)
+        str_rep_no_move = self.stringRepresentation(board)
         
         if b.turn == WHITE and b.in_checkmate():
             return -1 * player
@@ -143,33 +136,37 @@ class ChessGame(Game):
         if b.in_stalemate() or b.insufficient_material() or b.half_moves >= 50 or self.state_counts[str_rep_no_move] >= 3:
             return 1e-2
 
-        #b.turn = swap_color(b.turn)
         if b.turn == BLACK and b.in_checkmate():
             return 1 * player
         
         return 0
 
-    def getCanonicalForm(self, board, player):
-        new_board = copy.deepcopy(board)
-        #board[8,6] = 0
-        #board[8,7] = 0
 
-        return new_board 
+    def getCanonicalForm(self, board, player):
+        # We play by color rather than by flipping the board
+        return copy.deepcopy(board)
 
     def getSymmetries(self, board, pi):
-        '''Chess is not symmetrical'''
+        # Chess is not symmetrical
         return [(board,pi)]
 
     def stringRepresentation(self, board):
-        # 9x8 numpy array (canonical board)
-        #right now the last row stores the number of half moves and num moves. Like 3 fold rep, all we care about is board state. 
-        new_board = copy.deepcopy(board)
-        new_board[8,6] = 0
-        new_board[8,7] = 0
-        return new_board.tostring()
+        # Right now the last row stores the number of half moves and num moves. 
+        # Like 3 fold rep, all we care about is board state. 
+        temp1 = board[8,6]
+        temp2 = board[8,7]
+
+        board[8,6] = 0   # Zero out half moves
+        board[8,7] = 0   # Zero out num moves
+
+        res = board.tostring()
+
+        board[8,6] = temp1
+        board[8,7] = temp2
+
+        return res
 
     def getScore(self, board, player):
-        #b = Board(mcts_board=board)
         return evaluate_board(board, player)
 
 def display(board):

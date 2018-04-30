@@ -10,10 +10,10 @@ Board data:
 Squares are stored and manipulated as (x,y) tuples.
 x is the column, y is the row.
 '''
-import re
 from .ChessConstants import *
 from .ChessUtil import *
 import numpy as np
+import re
 
 class Board():
 
@@ -479,7 +479,7 @@ class Board():
         Zobrist key would be maintained in the make_move/undo_move functions,
         avoiding the costly that we do below.
         """
-        
+
         moves = []
         positions = {}
         repetition = False
@@ -696,25 +696,6 @@ class Board():
     ####################################################
     ################### Other Things ###################
     ####################################################
-    # def get_board(self):
-    #     output = []
-    #     row    = []
-
-    #     i = SQUARES['a8']
-    #     while i < SQUARES['h1'] + 1:
-    #     # for i in range(SQUARES['a8'], SQUARES['h1']+1):
-    #         if (self.board[i] == None):
-    #             row.append(None)
-    #         else:
-    #             row.append({'type': self.board[i]['type'], 'color': self.board[i]['color']})
-            
-    #         if ((i + 1) & 0x88):
-    #             output.append(row)
-    #             row = []
-    #             i += 8
-    #         i+=1
-
-    #     return output
 
     def get_board_mcts(self):
         output = []
@@ -748,47 +729,18 @@ class Board():
         row = [king1,king2, player, castle1, castle2, ep_square, half_moves, move_number]
         output.append(row)
 
-        # row.append()
-
-
-
-        # self.board = np.empty((64,))
-        # self.kings = {w: EMPTY, b: EMPTY}
-        # self.turn = WHITE
-        # self.castling = {w: 0, b: 0}
-        # self.ep_square = EMPTY
-        # self.half_moves = 0
-        # self.move_number = 1
-        # self.history = []
-        # self.header = {}
-
-
         return output
 
     def get_pgn(self, options=None):
         return None
 
     def do_move(self, move, options=None):
-        '''/* The move function can be called with in the following parameters:
-         *
-         * .move('Nxb7')      <- where 'move' is a case-sensitive SAN string
-         *
-         * .move({ from: 'h7', <- where the 'move' is a move object (additional
-         *         to :'h8',      fields are ignored)
-         *         promotion: 'q',
-         *      })
-         */'''
-        #print("In the do_move function.")
-        #print("The move is: " + str(move))
-        # // allow the user to specify the sloppy move parser to work around over
-        # // disambiguation bugs in Fritz and Chessbase
         sloppy = options['sloppy'] if (isinstance(options,dict) and 'sloppy' in options.keys()) else False
 
         move_obj = None
 
         if (isinstance(move, str)):
             move_obj = move_from_san(move, sloppy)
-            #print(" Move type string and move object is: " +str(move_obj))
         elif (isinstance(move,dict)):
             moves = self.generate_moves()
 
@@ -799,34 +751,13 @@ class Board():
                     (('promotion' not in moves[i].keys()) or \
                     move['promotion'] == moves[i]['promotion'])):
                     move_obj = moves[i]
-                    # print(move_obj)
-                    #print("Move type dict and move object is: " +str(move_obj))
                     break
-
-            # if 'promotion' in move.keys():
-            #     print("PROMOTION")
-            #     print(move_obj)
-            #     print(ascii(self))
-            #     print(self.get_board_mcts())
-            #     print("Our Move: ", move)
-            #     print("ALL MOVES IN PROMOTION \n {}".format(moves))
-                
-            #     for i in range(len(moves)):
-            #         # print("From {}, To {}, Move: {}".format(algebraic(moves[i]['from']), algebraic(moves[i]['to']), moves[i]))
-            #         if (move['from'] == algebraic(moves[i]['from']) and \
-            #             move['to'] == algebraic(moves[i]['to'])):
-            #             print("possible move", moves[i])
-            #             # print(move_obj)
-
-        # failed to find move
-        # if (not move_obj):
-        #     return None
 
         # Throw error if move is not valid
         assert move_obj
 
-        # need to make a copy of move because we can't generate SAN after the
-        # move is made
+        # need to make a copy of move because we can't generate 
+        # SAN after the move is made
         pretty_move = make_pretty(self, move_obj)
 
         self.make_move(move_obj)
@@ -837,21 +768,4 @@ class Board():
         move = self.undo_move()
         return make_pretty(self, move) if (move) else None   
 
-    # def get_history(self, options):
-    #     reversed_history = []
-    #     move_history = []
-    #     verbose = (isinstance(options,dict) and 'verbose' in options.keys() and options['verbose'])
-
-    #     while (len(history) > 0):
-    #         reversed_history.append(self.undo_move())
-
-    #     while (len(reversed_history) > 0):
-    #         move = reversed_history.pop()
-    #         if (verbose):
-    #             move_history.append(make_pretty(self, move))
-    #         else:
-    #             move_history.append(move_to_san(self, move))
-    #         self.make_move(move)
-
-    #     return move_history
 

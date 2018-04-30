@@ -6,16 +6,12 @@ from chess.keras.NNet import NNetWrapper as NNet
 from MCTS import MCTS
 from utils import *
 
-from _pickle import Unpickler
-import numpy as np
-import copy
-from queue import Queue
-import math
 from timeit import default_timer as timer
-import time
-import os
-from utils import *
-from MCTS import MCTS
+from _pickle import Unpickler
+from queue import Queue
+import numpy as np
+
+import copy, math, time, os
 
 class NNetPlayer():
     def __init__(self, game, ckpt_path, ckpt_file, args):
@@ -258,36 +254,6 @@ class HumanNetworkChessPlayer():
         return num
 
 
-
-
-
-
-
-
-"""
-/
-9x8 mcts board
-
-passing around this board state: self.game.getCanonicalForm(board, curPlayer)
-
-load_mcts:load board as game current board
-
-for each state get all valid moves
-    
-    game.nextmove
-    next_state = game.getnextstate
-    return a tuple score, state it was at
-
-    copy.deepcopy on the board to not effect
-
-    board class, and board-array, and the game. Were talking about board-array
-
-    load mcts creates board object from board array
-"""
-#----------------------------------------------------------------------------------------
-#-------------------------------AlphaBetaPlayer------------------------------------------
-#----------------------------------------------------------------------------------------
-
 class AlphaBetaPlayer(): 
     #Alpha: best already explored option along path to root for maximizer
     #Beta: best already explored option along path to root for minimizer
@@ -315,7 +281,6 @@ class AlphaBetaPlayer():
 
         is_maximising_player = True
 
-
         #Get available moves for the initial board state
         new_game_moves = self.game.getValidMoves(board, player)
         new_game_moves = [i for i, e in enumerate(new_game_moves) if e != 0]
@@ -331,8 +296,6 @@ class AlphaBetaPlayer():
         best_move = 0
         best_moves = [0, 0, 0]
 
-        #start = timer()
-
         #Iterate over initial moves and pass into the minimax function to recurse on
         for i in range(len(new_game_moves)):
 
@@ -343,7 +306,6 @@ class AlphaBetaPlayer():
 
             #Apply the move to the starting board to generate a new board (get next state is tuple holding board and count)
             new_board_state = self.game.getNextState(board_copy, player, new_game_move)[0]
-
             
             #Play the game starting with this move up to 'depth' and assess it's value
             value = self.minimax(depth - 1, new_board_state, self.game, -infinity, infinity, 1-player, not is_maximising_player)#1-player)
@@ -367,13 +329,6 @@ class AlphaBetaPlayer():
             if best_move_score > min_score:
                 best_moves_scores[worst_move] = value
                 best_moves[worst_move] = new_game_move
-
-        # print("Number of moves available: " + str(len(new_game_moves)))
-        # print("COLOR: {} \nBEST MOVES: {} \n SCORES {} \n DECISION: {} \n DECISION SCORE: {}".format(player, list(map(decode_move, best_moves)), best_moves_scores, decode_move(best_move), best_move_score))
-        # print("Finished a decision.")
-        
-        #end = timer()
-        #print("Time elapsed: " + str(end - start))
 
         return best_move
 
@@ -439,9 +394,6 @@ class AlphaBetaPlayer():
 
             return best_move_score
 
-#----------------------------------------------------------------------------------------
-#-----------------------------AlphaBetaNetworkPlayer-------------------------------------
-#----------------------------------------------------------------------------------------
 
 class AlphaBetaNetworkPlayer(): 
     #Alpha: best already explored option along path to root for maximizer
@@ -472,7 +424,6 @@ class AlphaBetaNetworkPlayer():
         new_game_moves = self.game.getValidMoves(board, player)
         new_game_moves = [i for i, e in enumerate(new_game_moves) if e != 0]
 
-
         legal_moves_values = [0]*len(new_game_moves)
 
         #Start off the player with their worst possible score
@@ -482,8 +433,6 @@ class AlphaBetaNetworkPlayer():
         #Default moves to zero (just as a placeholder)
         best_move = 0
         best_moves = [0, 0, 0]
-
-        #start = timer()
 
         #Iterate over initial moves and pass into the minimax function to recurse on
         for i in range(len(new_game_moves)):
@@ -495,7 +444,6 @@ class AlphaBetaNetworkPlayer():
 
             #Apply the move to the starting board to generate a new board (get next state is tuple holding board and count)
             new_board_state = self.game.getNextState(board_copy, player, new_game_move)[0]
-
             
             #Play the game starting with this move up to 'depth' and assess it's value
             value = self.minimax(depth - 1, new_board_state, self.game, -infinity, infinity, 1-player, not is_maximising_player)#1-player)
@@ -520,27 +468,14 @@ class AlphaBetaNetworkPlayer():
                 best_moves_scores[worst_move] = value
                 best_moves[worst_move] = new_game_move
 
-        # print("Number of moves available: " + str(len(new_game_moves)))
-        # print("COLOR: {} \nBEST MOVES: {} \n SCORES {} \n DECISION: {} \n DECISION SCORE: {}".format(player, list(map(decode_move, best_moves)), best_moves_scores, decode_move(best_move), best_move_score))
-        # print("Finished a decision.")
-        
-        #end = timer()
-        #print("Time elapsed: " + str(end - start))
-
-
-
         #Convert the move to a network-compatible representation
         move = decode_move(best_move)
-        #print("decoded best move: " + str(move))
-
 
         b = Board(mcts_board=board)
         moves = b.generate_moves({'legal': True})
 
         ugly_move = None
         for i in range(len(moves)):
-            #print("algebraic")
-            #print(algebraic(moves[i]['from']))
 
             if (move['from'] == algebraic(moves[i]['from']) and move['to'] == algebraic(moves[i]['to']) and \
                 (('promotion' not in moves[i].keys()) or move['promotion'] == moves[i]['promotion'])):
@@ -551,9 +486,6 @@ class AlphaBetaNetworkPlayer():
         print("SELECTED MOVE: " + str(ugly_move))
 
         self.queue.put(ugly_move)
-
-
-
 
         return best_move
 
@@ -618,42 +550,6 @@ class AlphaBetaNetworkPlayer():
                     return best_move_score
 
             return best_move_score
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class EnsemblePlayer():
