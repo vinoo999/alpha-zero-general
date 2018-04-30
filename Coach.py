@@ -110,10 +110,14 @@ class Coach():
                 res = game.getGameEnded(board, curPlayer)
 
                 if res != 0:
+                    examples = [(x[0], x[2], res * ((-1) ** (x[1] != curPlayer))) for x in trainExamples]
+
+                    for i, x in enumerate(reversed(trainExamples)):
+                        print("end - " + str(i + 1) + " step:   ex[2]=" + str(res * ((-1) ** (x[1] != curPlayer))))
+
                     print("Game done!  Res=" + str(res) + "  CurPlayer=" + str(curPlayer))
                     display(board)
 
-                    examples = [(x[0], x[2], res * ((-1) ** (x[1] != curPlayer))) for x in trainExamples]
                     done_queue.put((time.time() - start, examples))
                     break
 
