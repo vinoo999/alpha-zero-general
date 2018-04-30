@@ -214,13 +214,11 @@ class AlphaBetaPlayer():
                 best_moves[worst_move] = new_game_move
 
         #print("COLOR: {} \nBEST MOVES: {} \n SCORES {} \n DECISION: {} \n DECISION SCORE: {}".format(player, list(map(decode_move, best_moves, player)), best_moves_scores, decode_move(best_move, player), best_move_score))
-<<<<<<< HEAD
-        print("COLOR: {} \n DECISION: {} \n DECISION SCORE: {}".format(player, decode_move(best_move, player), best_move_score))
-        print("Finished a decision.")
+        #print("COLOR: {} \n DECISION: {} \n DECISION SCORE: {}".format(player, decode_move(best_move, player), best_move_score))
+        #print("Finished a decision.")
         
         # print(display(board))
 
-=======
         #print("COLOR: {} \n DECISION: {} \n DECISION SCORE: {}".format(player, decode_move(best_move, player), best_move_score))
         # print("COLOR: {} \nBEST MOVES: {} \n SCORES {} \n DECISION: {} \n DECISION SCORE: {}".format(player, [decode_move(m,player) for m in best_moves], best_moves_scores, decode_move(best_move, player), best_move_score))
 
@@ -229,7 +227,6 @@ class AlphaBetaPlayer():
         # input("continue?")
         # print("-----------------------------------------------")
         # print("")
->>>>>>> e12e693741a8d75a1132a60405d4d1dd0b4513bc
         #end = timer()
         #print("Time elapsed: " + str(end - start))
 
