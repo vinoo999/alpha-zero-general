@@ -30,9 +30,6 @@ class RandomPlayer():
         valids = self.game.getValidMoves(board, 1)
         while valids[a]!=1:
             a = np.random.randint(self.game.getActionSize())
-        display(board)
-        print("a: "+str(a))
-            #print(decode_move(a, 1))
         return a
 
 class NNetPlayer():
@@ -111,10 +108,9 @@ class HumanChessPlayer():
             move_index = encode_move(move, player)
             print("move_index: " +str(move_index))
 
-            print("cast back: " + str(decode_move(move_index, player)))
+            print("cast back: " + str(decode_move(move_index)))
 
             if valid[move_index]:
-            	print("valid!")
             	break
             else:
             	print("Invalid move. Enter again.")
@@ -136,7 +132,7 @@ class AlphaBetaPlayer():
 
     def __init__(self, game):
         self.game = game
-        self.depth =1
+        self.depth =2
 
     def play(self, board):
         """Returns the best move as variable *num* """
@@ -214,8 +210,8 @@ class AlphaBetaPlayer():
                 best_moves[worst_move] = new_game_move
 
         #print("COLOR: {} \nBEST MOVES: {} \n SCORES {} \n DECISION: {} \n DECISION SCORE: {}".format(player, list(map(decode_move, best_moves, player)), best_moves_scores, decode_move(best_move, player), best_move_score))
-        #print("COLOR: {} \n DECISION: {} \n DECISION SCORE: {}".format(player, decode_move(best_move, player), best_move_score))
-        # print("COLOR: {} \nBEST MOVES: {} \n SCORES {} \n DECISION: {} \n DECISION SCORE: {}".format(player, [decode_move(m,player) for m in best_moves], best_moves_scores, decode_move(best_move, player), best_move_score))
+        print("COLOR: {} \n DECISION: {} \n DECISION SCORE: {}".format(player, decode_move(best_move, player), best_move_score))
+        print("COLOR: {} \nBEST MOVES: {} \n SCORES {} \n DECISION: {} \n DECISION SCORE: {}".format(player, [decode_move(m,player) for m in best_moves], best_moves_scores, decode_move(best_move, player), best_move_score))
 
         # print("Finished a decision.")
         # #display(board)
@@ -231,11 +227,11 @@ class AlphaBetaPlayer():
     def minimax(self, depth, board, game, alpha, beta, player, is_maximising_player):
  
         infinity = float('inf')
-        # print("---------------------------------------------------------")
-        # print("At depth:" + str(depth))
-        # display(board)
-        # print("score: " + str(self.game.getScore(board, player)))
-        # print("---------------------------------------------------------")
+        print("---------------------------------------------------------")
+        print("At depth:" + str(depth))
+        display(board)
+        print("score: " + str(self.game.getScore(board, player)))
+        print("---------------------------------------------------------")
 
         #Base case where we've reached the max depth to explore
         if depth == 0:
